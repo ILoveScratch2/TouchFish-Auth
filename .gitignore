@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+backend/.env
+backend/data/
+backend/keys/
+backend/server.log
+
+# Node
+node_modules/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+
+# 测试产物
+backend/tests/_keys/
