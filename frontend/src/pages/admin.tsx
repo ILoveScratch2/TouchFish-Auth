@@ -6,10 +6,20 @@ import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { PageWrapper, listContainerVariants, listItemVariants } from "@/components/ui/motion";
+import {
+  PageWrapper,
+  listContainerVariants,
+  listItemVariants,
+} from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/primitives";
 import { ApiError, api } from "@/lib/api";
 import { formatTime } from "@/lib/format";
@@ -56,10 +66,18 @@ export function AdminPage() {
             variant="outline"
             disabled={busy === "rotate"}
             onClick={() =>
-              act("rotate", api.adminRotateKeys, "已轮换签名密钥，旧公钥保留 7 天")
+              act(
+                "rotate",
+                api.adminRotateKeys,
+                "已轮换签名密钥，旧公钥保留 7 天",
+              )
             }
           >
-            {busy === "rotate" ? <Loader2 className="animate-spin" /> : <RotateCw />}
+            {busy === "rotate" ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <RotateCw />
+            )}
             轮换密钥
           </Button>
         }
@@ -77,7 +95,10 @@ export function AdminPage() {
           animate="animate"
           className="flex flex-col gap-6"
         >
-          <motion.div variants={listItemVariants} className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <motion.div
+            variants={listItemVariants}
+            className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5"
+          >
             <Stat label="用户" value={data.stats.users} />
             <Stat label="管理员" value={data.stats.admins} />
             <Stat label="活跃会话" value={data.stats.active_sessions} />
@@ -114,7 +135,9 @@ export function AdminPage() {
                             {user.status === "suspended" ? (
                               <StatusBadge tone="danger">已停用</StatusBadge>
                             ) : null}
-                            {isSelf ? <StatusBadge tone="neutral">我</StatusBadge> : null}
+                            {isSelf ? (
+                              <StatusBadge tone="neutral">我</StatusBadge>
+                            ) : null}
                           </div>
                           <div className="mt-1 text-xs text-muted-foreground">
                             创建于 {formatTime(user.created_at)}
@@ -134,7 +157,9 @@ export function AdminPage() {
                                     user.id,
                                     user.role === "admin" ? "user" : "admin",
                                   ),
-                                user.role === "admin" ? "已收回管理员权限" : "已授予管理员权限",
+                                user.role === "admin"
+                                  ? "已收回管理员权限"
+                                  : "已授予管理员权限",
                               )
                             }
                           >
@@ -150,9 +175,13 @@ export function AdminPage() {
                                 () =>
                                   api.adminSetStatus(
                                     user.id,
-                                    user.status === "active" ? "suspended" : "active",
+                                    user.status === "active"
+                                      ? "suspended"
+                                      : "active",
                                   ),
-                                user.status === "active" ? "已停用该用户" : "已恢复该用户",
+                                user.status === "active"
+                                  ? "已停用该用户"
+                                  : "已恢复该用户",
                               )
                             }
                           >
@@ -185,9 +214,19 @@ export function AdminPage() {
             <InstanceEditor
               existing={data.instances}
               busy={busy}
-              onSave={(body) => act(`inst-${body.id}`, () => api.adminUpsertInstance(body), "实例已保存")}
+              onSave={(body) =>
+                act(
+                  `inst-${body.id}`,
+                  () => api.adminUpsertInstance(body),
+                  "实例已保存",
+                )
+              }
               onDelete={(id) =>
-                act(`del-${id}`, () => api.adminDeleteInstance(id), `已删除实例 ${id}`)
+                act(
+                  `del-${id}`,
+                  () => api.adminDeleteInstance(id),
+                  `已删除实例 ${id}`,
+                )
               }
             />
           </motion.div>
@@ -196,15 +235,21 @@ export function AdminPage() {
             <Card>
               <CardHeader>
                 <CardTitle>签名密钥</CardTitle>
-                <CardDescription>轮换后新 token 用新钥签发，旧公钥保留 7 天供对端缓存过期</CardDescription>
+                <CardDescription>
+                  轮换后新 token 用新钥签发，旧公钥保留 7 天供对端缓存过期
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between gap-4">
-                  <span className="text-xs font-medium text-muted-foreground">当前 kid</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    当前 kid
+                  </span>
                   <span className="font-mono">{data.keys.active_kid}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-xs font-medium text-muted-foreground">公钥数量</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    公钥数量
+                  </span>
                   <span>{data.keys.all_kids.length}</span>
                 </div>
               </CardContent>
@@ -243,7 +288,9 @@ function InstanceEditor({
 }) {
   const first = existing[0];
   const [id, setId] = useState("main");
-  const [baseUrl, setBaseUrl] = useState(first?.base_url ?? "http://127.0.0.1:7001");
+  const [baseUrl, setBaseUrl] = useState(
+    first?.base_url ?? "http://127.0.0.1:7001",
+  );
   const [name, setName] = useState(first?.display_name ?? "TouchFish");
   const [audience, setAudience] = useState(first?.audience ?? "");
 
@@ -252,7 +299,8 @@ function InstanceEditor({
       <CardHeader>
         <CardTitle>TouchFish 实例</CardTitle>
         <CardDescription>
-          issuer 始终等于本平台地址；改动后需要同步更新服务器侧的 jwt_external_issuers
+          issuer 始终等于本平台地址；改动后需要同步更新服务器侧的
+          jwt_external_issuers
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -266,7 +314,9 @@ function InstanceEditor({
                 <div className="min-w-0">
                   <div className="text-sm font-medium">
                     {item.display_name}
-                    <span className="ml-2 font-mono text-xs text-muted-foreground">{item.id}</span>
+                    <span className="ml-2 font-mono text-xs text-muted-foreground">
+                      {item.id}
+                    </span>
                   </div>
                   <div className="truncate font-mono text-xs text-muted-foreground">
                     {item.base_url}
@@ -278,7 +328,9 @@ function InstanceEditor({
                   disabled={busy === `del-${item.id}`}
                   onClick={() => onDelete(item.id)}
                 >
-                  {busy === `del-${item.id}` ? <Loader2 className="animate-spin" /> : null}
+                  {busy === `del-${item.id}` ? (
+                    <Loader2 className="animate-spin" />
+                  ) : null}
                   删除
                 </Button>
               </div>
@@ -308,11 +360,18 @@ function InstanceEditor({
                 pattern="[a-z0-9_-]+"
                 required
               />
-              <FieldDescription>小写字母、数字、下划线或连字符</FieldDescription>
+              <FieldDescription>
+                小写字母、数字、下划线或连字符
+              </FieldDescription>
             </Field>
             <Field>
               <FieldLabel htmlFor="inst-name">显示名</FieldLabel>
-              <Input id="inst-name" value={name} onChange={(event) => setName(event.target.value)} required />
+              <Input
+                id="inst-name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+              />
             </Field>
           </div>
           <Field>
@@ -323,7 +382,9 @@ function InstanceEditor({
               onChange={(event) => setBaseUrl(event.target.value)}
               required
             />
-            <FieldDescription>例如 https://touchfish.xin，不带结尾斜杠</FieldDescription>
+            <FieldDescription>
+              例如 https://touchfish.xin，不带结尾斜杠
+            </FieldDescription>
           </Field>
           <Field>
             <FieldLabel htmlFor="inst-aud">audience（可选）</FieldLabel>
@@ -332,10 +393,14 @@ function InstanceEditor({
               value={audience}
               onChange={(event) => setAudience(event.target.value)}
             />
-            <FieldDescription>须与服务器 jwt_external_issuers[].audience 一致</FieldDescription>
+            <FieldDescription>
+              须与服务器 jwt_external_issuers[].audience 一致
+            </FieldDescription>
           </Field>
           <Button type="submit" disabled={busy === `inst-${id}`}>
-            {busy === `inst-${id}` ? <Loader2 className="animate-spin" /> : null}
+            {busy === `inst-${id}` ? (
+              <Loader2 className="animate-spin" />
+            ) : null}
             保存实例
           </Button>
         </form>

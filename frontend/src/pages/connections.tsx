@@ -6,10 +6,20 @@ import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { PageWrapper, listContainerVariants, listItemVariants } from "@/components/ui/motion";
+import {
+  PageWrapper,
+  listContainerVariants,
+  listItemVariants,
+} from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/primitives";
 import { ApiError, api, type Connection, type Instance } from "@/lib/api";
 import { formatTime } from "@/lib/format";
@@ -25,7 +35,10 @@ export function ConnectionsPage() {
   const [busyId, setBusyId] = useState("");
 
   const load = useCallback(async () => {
-    const [conn, inst] = await Promise.all([api.connections(), api.instances()]);
+    const [conn, inst] = await Promise.all([
+      api.connections(),
+      api.instances(),
+    ]);
     setConnections(conn.connections);
     setInstances(inst.instances);
     setAdding(conn.connections.length === 0);
@@ -59,7 +72,9 @@ export function ConnectionsPage() {
       await api.unbind(id);
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "解除绑定失败，请稍后重试");
+      setError(
+        err instanceof ApiError ? err.message : "解除绑定失败，请稍后重试",
+      );
     } finally {
       setBusyId("");
     }
@@ -98,13 +113,23 @@ export function ConnectionsPage() {
                   <div className="min-w-0">
                     <CardTitle className="flex items-center gap-2">
                       {item.instance_name}
-                      <StatusBadge tone={item.bind_channel === "platform" ? "success" : "warning"}>
-                        {item.bind_channel === "platform" ? "专用通道" : "兼容通道"}
+                      <StatusBadge
+                        tone={
+                          item.bind_channel === "platform"
+                            ? "success"
+                            : "warning"
+                        }
+                      >
+                        {item.bind_channel === "platform"
+                          ? "专用通道"
+                          : "兼容通道"}
                       </StatusBadge>
                     </CardTitle>
                     <CardDescription className="mt-1.5">
                       {item.tfv5_username}
-                      <span className="ml-2 font-mono text-xs">uid {item.tfv5_uid}</span>
+                      <span className="ml-2 font-mono text-xs">
+                        uid {item.tfv5_uid}
+                      </span>
                     </CardDescription>
                   </div>
                   <Button
@@ -113,7 +138,9 @@ export function ConnectionsPage() {
                     disabled={busyId === item.instance_id}
                     onClick={() => unbind(item.instance_id)}
                   >
-                    {busyId === item.instance_id ? <Loader2 className="animate-spin" /> : null}
+                    {busyId === item.instance_id ? (
+                      <Loader2 className="animate-spin" />
+                    ) : null}
                     解除绑定
                   </Button>
                 </CardHeader>
@@ -128,7 +155,9 @@ export function ConnectionsPage() {
           {connections.length === 0 && !adding ? (
             <Card>
               <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
-                <p className="text-sm text-muted-foreground">还没有连接任何 TouchFish 服务器</p>
+                <p className="text-sm text-muted-foreground">
+                  还没有连接任何 TouchFish 服务器
+                </p>
                 <Button variant="outline" onClick={() => setAdding(true)}>
                   连接一个
                 </Button>
@@ -148,7 +177,9 @@ export function ConnectionsPage() {
                 <CardContent>
                   <form className="space-y-4" onSubmit={bind}>
                     <Field>
-                      <FieldLabel htmlFor="identifier">用户名或数字 ID</FieldLabel>
+                      <FieldLabel htmlFor="identifier">
+                        用户名或数字 ID
+                      </FieldLabel>
                       <Input
                         id="identifier"
                         value={identifier}
@@ -172,7 +203,11 @@ export function ConnectionsPage() {
                       </FieldDescription>
                     </Field>
                     <div className="flex gap-2">
-                      <Button type="submit" variant="primary" disabled={pending}>
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        disabled={pending}
+                      >
                         {pending ? (
                           <>
                             <Loader2 className="animate-spin" />
@@ -183,7 +218,11 @@ export function ConnectionsPage() {
                         )}
                       </Button>
                       {connections.length > 0 ? (
-                        <Button type="button" variant="ghost" onClick={() => setAdding(false)}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => setAdding(false)}
+                        >
                           取消
                         </Button>
                       ) : null}
@@ -199,11 +238,21 @@ export function ConnectionsPage() {
   );
 }
 
-function Meta({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Meta({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   return (
     <div>
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      <div className={mono ? "mt-0.5 font-mono text-sm" : "mt-0.5 text-sm"}>{value}</div>
+      <div className={mono ? "mt-0.5 font-mono text-sm" : "mt-0.5 text-sm"}>
+        {value}
+      </div>
     </div>
   );
 }

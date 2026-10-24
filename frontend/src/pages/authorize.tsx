@@ -52,12 +52,18 @@ export function AuthorizePage() {
         if (cancelled) return;
         const list = instancesResult.instances;
         const matched =
-          list.find((item) => target && item.base_url.replace(/\/$/, "") === target.replace(/\/$/, "")) ??
+          list.find(
+            (item) =>
+              target &&
+              item.base_url.replace(/\/$/, "") === target.replace(/\/$/, ""),
+          ) ??
           list[0] ??
           null;
         setInstance(matched);
         const conn = matched
-          ? connectionsResult.connections.find((item) => item.instance_id === matched.id) ?? null
+          ? (connectionsResult.connections.find(
+              (item) => item.instance_id === matched.id,
+            ) ?? null)
           : null;
         setConnection(conn);
         setPhase(conn ? "ready" : "need-bind");
@@ -78,7 +84,9 @@ export function AuthorizePage() {
     try {
       await api.bind({ identifier, password, instance_id: instance?.id });
       const result = await api.connections();
-      const conn = result.connections.find((item) => item.instance_id === instance?.id) ?? null;
+      const conn =
+        result.connections.find((item) => item.instance_id === instance?.id) ??
+        null;
       setConnection(conn);
       setPassword("");
       setPhase(conn ? "ready" : "need-bind");
@@ -121,7 +129,9 @@ export function AuthorizePage() {
     return (
       <AuthLayout
         title="已返回应用"
-        description={bridged_done ? "可以关闭此页面" : "请复制下面的票据返回应用"}
+        description={
+          bridged_done ? "可以关闭此页面" : "请复制下面的票据返回应用"
+        }
       >
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-2 py-2 text-center">
@@ -130,7 +140,9 @@ export function AuthorizePage() {
               已完成对 {instance?.display_name ?? "TouchFish"} 的授权
             </p>
           </div>
-          {!bridged_done ? <IdentifierBlock label="一次性票据" value={ticket} /> : null}
+          {!bridged_done ? (
+            <IdentifierBlock label="一次性票据" value={ticket} />
+          ) : null}
         </div>
       </AuthLayout>
     );
@@ -164,7 +176,9 @@ export function AuthorizePage() {
         <AuthForm onSubmit={bind}>
           <AuthItem>
             <Field>
-              <FieldLabel htmlFor="identifier">TouchFish 用户名或数字 ID</FieldLabel>
+              <FieldLabel htmlFor="identifier">
+                TouchFish 用户名或数字 ID
+              </FieldLabel>
               <Input
                 id="identifier"
                 value={identifier}
@@ -185,11 +199,18 @@ export function AuthorizePage() {
                 aria-invalid={Boolean(error)}
                 required
               />
-              <FieldDescription>仅用于向服务器验证，不会保存在本平台</FieldDescription>
+              <FieldDescription>
+                仅用于向服务器验证，不会保存在本平台
+              </FieldDescription>
             </Field>
           </AuthItem>
           <AuthItem>
-            <Button type="submit" variant="primary" className="w-full" disabled={pending}>
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full"
+              disabled={pending}
+            >
               {pending ? (
                 <>
                   <Loader2 className="animate-spin" />
@@ -207,7 +228,9 @@ export function AuthorizePage() {
         <div className="space-y-4">
           <AuthItem>
             <div className="rounded-lg border bg-muted px-4 py-3 text-sm">
-              <div className="text-xs font-medium text-muted-foreground">已连接</div>
+              <div className="text-xs font-medium text-muted-foreground">
+                已连接
+              </div>
               <div className="mt-1">
                 {connection.tfv5_username}
                 <span className="ml-2 font-mono text-xs text-muted-foreground">

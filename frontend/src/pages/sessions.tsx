@@ -7,7 +7,11 @@ import { Alert } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageWrapper, listContainerVariants, listItemVariants } from "@/components/ui/motion";
+import {
+  PageWrapper,
+  listContainerVariants,
+  listItemVariants,
+} from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/primitives";
 import { ApiError, api, type SessionRow } from "@/lib/api";
 import { describeAgent, formatTime } from "@/lib/format";
@@ -41,7 +45,10 @@ export function SessionsPage() {
 
   return (
     <PageWrapper className="flex flex-col gap-6">
-      <PageHeader title="登录设备" description="这些浏览器会话可以访问你的账户" />
+      <PageHeader
+        title="登录设备"
+        description="这些浏览器会话可以访问你的账户"
+      />
 
       {error ? <Alert variant="destructive">{error}</Alert> : null}
 
@@ -61,10 +68,13 @@ export function SessionsPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm font-medium">
                       {describeAgent(row.user_agent)}
-                      {row.current ? <StatusBadge tone="info">当前设备</StatusBadge> : null}
+                      {row.current ? (
+                        <StatusBadge tone="info">当前设备</StatusBadge>
+                      ) : null}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
-                      最近活动 {formatTime(row.last_seen_at)} · IP {row.ip || "未知"}
+                      最近活动 {formatTime(row.last_seen_at)} · IP{" "}
+                      {row.ip || "未知"}
                     </div>
                   </div>
                   <Button
@@ -73,7 +83,9 @@ export function SessionsPage() {
                     disabled={row.current || busy === row.id}
                     onClick={() => revoke(row.id)}
                   >
-                    {busy === row.id ? <Loader2 className="animate-spin" /> : null}
+                    {busy === row.id ? (
+                      <Loader2 className="animate-spin" />
+                    ) : null}
                     {row.current ? "当前会话" : "退出"}
                   </Button>
                 </CardContent>

@@ -5,23 +5,42 @@ import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { PageWrapper, listContainerVariants, listItemVariants } from "@/components/ui/motion";
+import {
+  PageWrapper,
+  listContainerVariants,
+  listItemVariants,
+} from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/primitives";
 import { api, type AuditEntry } from "@/lib/api";
 import { formatTime } from "@/lib/format";
 
-const TONE: Record<string, "neutral" | "success" | "warning" | "info" | "danger"> = {
+const TONE: Record<
+  string,
+  "neutral" | "success" | "warning" | "info" | "danger"
+> = {
   failed: "danger",
   blocked: "danger",
 };
 
-function toneFor(event: string): "neutral" | "success" | "warning" | "info" | "danger" {
+function toneFor(
+  event: string,
+): "neutral" | "success" | "warning" | "info" | "danger" {
   if (event.includes("failed") || event.includes("blocked")) return "danger";
   if (event.startsWith("admin.") || event.startsWith("cli.")) return "info";
   if (event.startsWith("mail.")) return "warning";
-  if (event.includes("register") || event.includes("login") || event.includes("verified")) {
+  if (
+    event.includes("register") ||
+    event.includes("login") ||
+    event.includes("verified")
+  ) {
     return "success";
   }
   return TONE.neutral;
@@ -39,7 +58,9 @@ export function AuditPage() {
   }, []);
 
   useEffect(() => {
-    load(applied).catch(() => setError("读取审计日志失败，请确认你有管理员权限"));
+    load(applied).catch(() =>
+      setError("读取审计日志失败，请确认你有管理员权限"),
+    );
   }, [load, applied]);
 
   return (
@@ -85,11 +106,17 @@ export function AuditPage() {
       {entries === null ? (
         <Skeleton className="h-64 w-full" />
       ) : (
-        <motion.div variants={listContainerVariants} initial="initial" animate="animate">
+        <motion.div
+          variants={listContainerVariants}
+          initial="initial"
+          animate="animate"
+        >
           <motion.div variants={listItemVariants}>
             <Card>
               <CardHeader>
-                <CardTitle>{applied ? `筛选：${applied}*` : "全部事件"}</CardTitle>
+                <CardTitle>
+                  {applied ? `筛选：${applied}*` : "全部事件"}
+                </CardTitle>
                 <CardDescription>共 {entries.length} 条</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -97,10 +124,16 @@ export function AuditPage() {
                   {entries.map((entry) => (
                     <div key={entry.id} className="px-6 py-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <StatusBadge tone={toneFor(entry.event)}>{entry.event}</StatusBadge>
-                        <span className="text-xs text-muted-foreground">{formatTime(entry.at)}</span>
+                        <StatusBadge tone={toneFor(entry.event)}>
+                          {entry.event}
+                        </StatusBadge>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(entry.at)}
+                        </span>
                         {entry.ip ? (
-                          <span className="font-mono text-xs text-muted-foreground">{entry.ip}</span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {entry.ip}
+                          </span>
                         ) : null}
                       </div>
                       {entry.detail ? (

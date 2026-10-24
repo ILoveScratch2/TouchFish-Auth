@@ -16,8 +16,18 @@ import { useSession } from "@/lib/session";
 
 const accountNav: NavItem[] = [
   { to: "/account", label: "账户", icon: <UserRound />, group: "账户" },
-  { to: "/account/connections", label: "已连接账户", icon: <Link2 />, group: "账户" },
-  { to: "/account/sessions", label: "登录设备", icon: <MonitorSmartphone />, group: "账户" },
+  {
+    to: "/account/connections",
+    label: "已连接账户",
+    icon: <Link2 />,
+    group: "账户",
+  },
+  {
+    to: "/account/sessions",
+    label: "登录设备",
+    icon: <MonitorSmartphone />,
+    group: "账户",
+  },
 ];
 
 const integrationAdminNav: NavItem[] = [
@@ -29,8 +39,18 @@ const integrationNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   { to: "/admin", label: "管理", icon: <ShieldCheck />, group: "管理员" },
-  { to: "/admin/settings", label: "站点配置", icon: <Settings2 />, group: "管理员" },
-  { to: "/admin/audit", label: "审计日志", icon: <ScrollText />, group: "管理员" },
+  {
+    to: "/admin/settings",
+    label: "站点配置",
+    icon: <Settings2 />,
+    group: "管理员",
+  },
+  {
+    to: "/admin/audit",
+    label: "审计日志",
+    icon: <ScrollText />,
+    group: "管理员",
+  },
 ];
 
 export function ProtectedLayout() {

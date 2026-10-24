@@ -1,7 +1,13 @@
 import { StatusBadge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { PageWrapper } from "@/components/ui/motion";
 import { IdentifierBlock } from "@/components/identifier-block";
 import { useSiteConfig } from "@/lib/site";
@@ -24,7 +30,8 @@ export function DeveloperPage() {
       />
 
       <Alert variant="info">
-        这一页用于让其他应用通过 TouchFish Auth 完成登录（我们也要有 OAuth）。尚未实现！
+        这一页用于让其他应用通过 TouchFish Auth 完成登录（我们也要有
+        OAuth）。尚未实现！
       </Alert>
 
       <Card>
@@ -35,7 +42,9 @@ export function DeveloperPage() {
         <CardContent className="space-y-3 text-sm">
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted-foreground">自助创建</span>
-            <span>{selfService ? "允许，你可自行创建应用" : "仅管理员可创建"}</span>
+            <span>
+              {selfService ? "允许，你可自行创建应用" : "仅管理员可创建"}
+            </span>
           </div>
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted-foreground">每人上限</span>
@@ -61,7 +70,10 @@ export function DeveloperPage() {
             value="/authorize?client_id=&state=&response_mode=bridge"
           />
           <IdentifierBlock label="换 ticket 端点" value="/api/auth/ticket" />
-          <IdentifierBlock label="发现文档" value="/.well-known/openid-configuration" />
+          <IdentifierBlock
+            label="发现文档"
+            value="/.well-known/openid-configuration"
+          />
         </CardContent>
       </Card>
 

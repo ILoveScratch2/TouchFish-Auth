@@ -24,10 +24,14 @@ export function IdentifierBlock({ label, value }: IdentifierBlockProps) {
   return (
     <div className="rounded-lg border bg-muted px-4 py-3">
       {label ? (
-        <div className="mb-1.5 text-xs font-medium text-muted-foreground">{label}</div>
+        <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+          {label}
+        </div>
       ) : null}
       <div className="flex items-start gap-3">
-        <code className="min-w-0 flex-1 font-mono text-sm [overflow-wrap:anywhere]">{value}</code>
+        <code className="min-w-0 flex-1 font-mono text-sm [overflow-wrap:anywhere]">
+          {value}
+        </code>
         <Button
           type="button"
           variant="ghost"

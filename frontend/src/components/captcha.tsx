@@ -18,7 +18,8 @@ declare global {
 }
 
 const SCRIPTS: Record<Provider, string> = {
-  turnstile: "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",
+  turnstile:
+    "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",
   hcaptcha: "https://js.hcaptcha.com/1/api.js?render=explicit",
 };
 
@@ -27,10 +28,14 @@ const loaded = new Set<string>();
 function loadScript(src: string): Promise<void> {
   if (loaded.has(src)) return Promise.resolve();
   return new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${src}"]`,
+    );
     if (existing) {
       existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("script error")));
+      existing.addEventListener("error", () =>
+        reject(new Error("script error")),
+      );
       return;
     }
     const script = document.createElement("script");
@@ -57,7 +62,12 @@ interface CaptchaWidgetProps {
 /**
  * Turnstile / hCaptcha 的显式渲染封装
  */
-export function CaptchaWidget({ provider, siteKey, onToken, resetSignal = 0 }: CaptchaWidgetProps) {
+export function CaptchaWidget({
+  provider,
+  siteKey,
+  onToken,
+  resetSignal = 0,
+}: CaptchaWidgetProps) {
   const container = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
   const [error, setError] = useState("");
@@ -88,7 +98,8 @@ export function CaptchaWidget({ provider, siteKey, onToken, resetSignal = 0 }: C
     loadScript(SCRIPTS[provider])
       .then(() => {
         if (cancelled || !container.current) return;
-        const api = provider === "turnstile" ? window.turnstile : window.hcaptcha;
+        const api =
+          provider === "turnstile" ? window.turnstile : window.hcaptcha;
         if (!api) {
           setError("验证组件未能加载");
           return;

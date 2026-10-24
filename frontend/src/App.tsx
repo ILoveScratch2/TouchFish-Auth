@@ -33,7 +33,10 @@ export default function App() {
             <Route path="/admin/integration" element={<IntegrationPage />} />
             {/* 开发者对所有登录用户开放 */}
             <Route path="/developer" element={<DeveloperPage />} />
-            <Route path="/admin/developer" element={<Navigate to="/developer" replace />} />
+            <Route
+              path="/admin/developer"
+              element={<Navigate to="/developer" replace />}
+            />
           </Route>
           <Route path="/" element={<Navigate to="/account" replace />} />
           <Route path="*" element={<Navigate to="/account" replace />} />

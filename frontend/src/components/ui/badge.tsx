@@ -9,8 +9,10 @@ const badgeVariants = cva(
     variants: {
       tone: {
         neutral: "border-border bg-muted text-muted-foreground",
-        success: "border-success-border bg-success-soft text-success-foreground",
-        warning: "border-warning-border bg-warning-soft text-warning-foreground",
+        success:
+          "border-success-border bg-success-soft text-success-foreground",
+        warning:
+          "border-warning-border bg-warning-soft text-warning-foreground",
         info: "border-info-border bg-info-soft text-info-foreground",
         danger: "border-error-border bg-error-soft text-error-foreground",
       },
@@ -20,7 +22,8 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
+  extends
+    React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {}
 
 export function StatusBadge({ className, tone, ...props }: BadgeProps) {

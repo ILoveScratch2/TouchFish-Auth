@@ -39,6 +39,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_agent   TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+-- prune 与过期会话查询按 expires_at 过滤，无索引会全表扫
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 
 CREATE TABLE IF NOT EXISTS tfv5_instances (
     id                  TEXT PRIMARY KEY,
@@ -76,6 +78,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     expires_at  REAL NOT NULL,
     consumed_at REAL
 );
+CREATE INDEX IF NOT EXISTS idx_tickets_expires ON tickets(expires_at);
 
 CREATE TABLE IF NOT EXISTS oauth_accounts (
     id                TEXT PRIMARY KEY,
@@ -123,6 +126,7 @@ CREATE TABLE IF NOT EXISTS email_verifications (
     consumed_at REAL
 );
 CREATE INDEX IF NOT EXISTS idx_verify_user ON email_verifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_verify_expires ON email_verifications(expires_at);
 """
 
 

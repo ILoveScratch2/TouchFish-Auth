@@ -73,7 +73,11 @@ export const PageWrapper = forwardRef<HTMLDivElement, PageWrapperProps>(
         ref={ref}
         initial={reduced ? { opacity: 0 } : "initial"}
         animate="animate"
-        variants={reduced ? { initial: { opacity: 0 }, animate: { opacity: 1 } } : pageVariants}
+        variants={
+          reduced
+            ? { initial: { opacity: 0 }, animate: { opacity: 1 } }
+            : pageVariants
+        }
         transition={reduced ? reducedTransition : springs.smooth}
         className={className}
       >

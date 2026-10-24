@@ -39,7 +39,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
 
   if (!response.ok) {
-    const error = (payload as { error?: { code?: string; message?: string } })?.error;
+    const error = (payload as { error?: { code?: string; message?: string } })
+      ?.error;
     throw new ApiError(
       error?.code ?? "request_failed",
       error?.message ?? `请求失败（${response.status}）`,
@@ -117,7 +118,11 @@ export type SiteConfig = {
   };
   email_verification: boolean;
   tfv5_login_auto_signup: boolean;
-  oauth_apps: { implemented: boolean; self_service: boolean; max_per_user: number };
+  oauth_apps: {
+    implemented: boolean;
+    self_service: boolean;
+    max_per_user: number;
+  };
   registration: { allowed: boolean; reason: string };
   instance: Instance | null;
 };
@@ -150,32 +155,59 @@ export const api = {
   site: () => request<SiteConfig>("/api/site"),
   me: () => request<{ user: User | null }>("/api/auth/me"),
   registrationStatus: () =>
-    request<{ allowed: boolean; reason: string; mode: string }>("/api/auth/registration"),
-  register: (body: { username: string; password: string; email?: string; captcha_token?: string }) =>
-    request<RegisterResult>("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
-  login: (body: { identifier: string; password: string; captcha_token?: string }) =>
-    request<{ user: User }>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
+    request<{ allowed: boolean; reason: string; mode: string }>(
+      "/api/auth/registration",
+    ),
+  register: (body: {
+    username: string;
+    password: string;
+    email?: string;
+    captcha_token?: string;
+  }) =>
+    request<RegisterResult>("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  login: (body: {
+    identifier: string;
+    password: string;
+    captcha_token?: string;
+  }) =>
+    request<{ user: User }>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   verifyEmail: (body: { verification_id: string; code: string }) =>
     request<{ user: User }>("/api/auth/verify-email", {
       method: "POST",
       body: JSON.stringify(body),
     }),
   resendVerification: (body: { identifier: string; password: string }) =>
-    request<{ verification_id: string; email: string }>("/api/auth/resend-verification", {
+    request<{ verification_id: string; email: string }>(
+      "/api/auth/resend-verification",
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    ),
+  logout: () =>
+    request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+  changePassword: (body: { current_password?: string; new_password: string }) =>
+    request<{ ok: boolean }>("/api/auth/password", {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
-  changePassword: (body: { current_password?: string; new_password: string }) =>
-    request<{ ok: boolean }>("/api/auth/password", { method: "POST", body: JSON.stringify(body) }),
 
   instances: () => request<{ instances: Instance[] }>("/api/instances"),
   connections: () => request<{ connections: Connection[] }>("/api/connections"),
-  bind: (body: { identifier: string; password: string; instance_id?: string }) =>
-    request<{ connection: { channel: string; tfv5_uid: number; tfv5_username: string } }>(
-      "/api/connections/bind",
-      { method: "POST", body: JSON.stringify(body) },
-    ),
+  bind: (body: {
+    identifier: string;
+    password: string;
+    instance_id?: string;
+  }) =>
+    request<{
+      connection: { channel: string; tfv5_uid: number; tfv5_username: string };
+    }>("/api/connections/bind", { method: "POST", body: JSON.stringify(body) }),
   tfv5Login: (body: {
     identifier: string;
     password: string;
@@ -187,17 +219,26 @@ export const api = {
       body: JSON.stringify(body),
     }),
   unbind: (instanceId: string) =>
-    request<{ ok: boolean }>(`/api/connections/${instanceId}`, { method: "DELETE" }),
+    request<{ ok: boolean }>(`/api/connections/${instanceId}`, {
+      method: "DELETE",
+    }),
 
   sessions: () => request<{ sessions: SessionRow[] }>("/api/auth/sessions"),
   revokeSession: (id: string) =>
     request<{ ok: boolean }>(`/api/auth/sessions/${id}`, { method: "DELETE" }),
 
-  authorizeComplete: (body: { client_id: string; state?: string; target?: string }) =>
-    request<{ ticket: string; expires_in: number; state?: string }>("/api/authorize/complete", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
+  authorizeComplete: (body: {
+    client_id: string;
+    state?: string;
+    target?: string;
+  }) =>
+    request<{ ticket: string; expires_in: number; state?: string }>(
+      "/api/authorize/complete",
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    ),
 
   developer: () =>
     request<{
@@ -250,15 +291,23 @@ export const api = {
       body: JSON.stringify(body),
     }),
   adminRotateKeys: () =>
-    request<{ active_kid: string; all_kids: string[] }>("/api/admin/keys/rotate", {
-      method: "POST",
-    }),
+    request<{ active_kid: string; all_kids: string[] }>(
+      "/api/admin/keys/rotate",
+      {
+        method: "POST",
+      },
+    ),
   adminDeleteInstance: (instanceId: string) =>
-    request<{ ok: boolean }>(`/api/admin/instances/${instanceId}`, { method: "DELETE" }),
-  adminLogoutAll: (userId: string) =>
-    request<{ ok: boolean; revoked: number }>(`/api/admin/users/${userId}/logout-all`, {
-      method: "POST",
+    request<{ ok: boolean }>(`/api/admin/instances/${instanceId}`, {
+      method: "DELETE",
     }),
+  adminLogoutAll: (userId: string) =>
+    request<{ ok: boolean; revoked: number }>(
+      `/api/admin/users/${userId}/logout-all`,
+      {
+        method: "POST",
+      },
+    ),
   adminSettings: () => request<AdminSettings>("/api/admin/settings"),
   adminCaptchaTest: () =>
     request<{
@@ -286,6 +335,8 @@ export async function fetchAuthConfig(): Promise<{
   authorization_endpoint: string;
   methods: AuthMethod[];
 }> {
-  const response = await fetch("/.well-known/auth-config", { credentials: "same-origin" });
+  const response = await fetch("/.well-known/auth-config", {
+    credentials: "same-origin",
+  });
   return response.json();
 }

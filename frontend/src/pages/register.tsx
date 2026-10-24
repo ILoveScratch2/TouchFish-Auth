@@ -37,7 +37,8 @@ export function RegisterPage() {
 
   const needCaptcha = Boolean(site?.captcha.enabled);
   const needEmail = Boolean(site?.email_verification);
-  const blocked = site && !site.registration.allowed ? site.registration.reason : "";
+  const blocked =
+    site && !site.registration.allowed ? site.registration.reason : "";
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -97,7 +98,10 @@ export function RegisterPage() {
     setError("");
     setNotice("");
     try {
-      const result = await api.resendVerification({ identifier: username, password });
+      const result = await api.resendVerification({
+        identifier: username,
+        password,
+      });
       setVerificationId(result.verification_id);
       setMaskedEmail(result.email);
       setNotice("验证码已重新发送");
@@ -142,7 +146,11 @@ export function RegisterPage() {
         title="验证邮箱"
         description={`验证码已发送到 ${maskedEmail}`}
         footer={
-          <button type="button" onClick={resend} className="underline-offset-4 hover:underline">
+          <button
+            type="button"
+            onClick={resend}
+            className="underline-offset-4 hover:underline"
+          >
             没收到？重新发送
           </button>
         }
@@ -151,8 +159,14 @@ export function RegisterPage() {
           {error ? (
             <motion.div
               initial={reduced ? { opacity: 0 } : { opacity: 0, height: 0 }}
-              animate={reduced ? { opacity: 1 } : { opacity: 1, height: "auto" }}
-              transition={reduced ? { duration: 0 } : { duration: 0.2, ease: easings.easeOutExpo }}
+              animate={
+                reduced ? { opacity: 1 } : { opacity: 1, height: "auto" }
+              }
+              transition={
+                reduced
+                  ? { duration: 0 }
+                  : { duration: 0.2, ease: easings.easeOutExpo }
+              }
               className="overflow-hidden"
             >
               <Alert variant="destructive">{error}</Alert>
@@ -179,7 +193,9 @@ export function RegisterPage() {
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 value={code}
-                onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                onChange={(event) =>
+                  setCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                }
                 aria-invalid={Boolean(error)}
                 placeholder="123456"
                 className="font-mono tracking-[0.4em]"
@@ -232,9 +248,15 @@ export function RegisterPage() {
             <motion.div
               key="error"
               initial={reduced ? { opacity: 0 } : { opacity: 0, height: 0 }}
-              animate={reduced ? { opacity: 1 } : { opacity: 1, height: "auto" }}
+              animate={
+                reduced ? { opacity: 1 } : { opacity: 1, height: "auto" }
+              }
               exit={reduced ? { opacity: 0 } : { opacity: 0, height: 0 }}
-              transition={reduced ? { duration: 0 } : { duration: 0.2, ease: easings.easeOutExpo }}
+              transition={
+                reduced
+                  ? { duration: 0 }
+                  : { duration: 0.2, ease: easings.easeOutExpo }
+              }
               className="overflow-hidden"
             >
               <Alert variant="destructive">{error}</Alert>
@@ -253,13 +275,17 @@ export function RegisterPage() {
               aria-invalid={Boolean(error)}
               required
             />
-            <FieldDescription>2–32 位，可用字母、数字、下划线、连字符或中文</FieldDescription>
+            <FieldDescription>
+              2–32 位，可用字母、数字、下划线、连字符或中文
+            </FieldDescription>
           </Field>
         </AuthItem>
 
         <AuthItem>
           <Field>
-            <FieldLabel htmlFor="email">邮箱{needEmail ? "" : "（可选）"}</FieldLabel>
+            <FieldLabel htmlFor="email">
+              邮箱{needEmail ? "" : "（可选）"}
+            </FieldLabel>
             <Input
               id="email"
               type="email"
@@ -269,7 +295,9 @@ export function RegisterPage() {
               aria-invalid={Boolean(error)}
               required={needEmail}
             />
-            {needEmail ? <FieldDescription>该站点要求验证邮箱后才能登录</FieldDescription> : null}
+            {needEmail ? (
+              <FieldDescription>该站点要求验证邮箱后才能登录</FieldDescription>
+            ) : null}
           </Field>
         </AuthItem>
 
@@ -302,7 +330,12 @@ export function RegisterPage() {
 
         <AuthItem>
           <AnimatedButton>
-            <Button type="submit" variant="primary" className="w-full" disabled={pending}>
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full"
+              disabled={pending}
+            >
               {pending ? (
                 <>
                   <Loader2 className="animate-spin" />

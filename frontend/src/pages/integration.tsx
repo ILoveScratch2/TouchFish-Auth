@@ -4,8 +4,18 @@ import { motion } from "framer-motion";
 import { IdentifierBlock } from "@/components/identifier-block";
 import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageWrapper, listContainerVariants, listItemVariants } from "@/components/ui/motion";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  PageWrapper,
+  listContainerVariants,
+  listItemVariants,
+} from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/primitives";
 import { api } from "@/lib/api";
 
@@ -45,13 +55,22 @@ export function IntegrationPage() {
               <CardHeader>
                 <CardTitle>服务器侧配置</CardTitle>
                 <CardDescription>
-                  写入 <code className="font-mono text-xs">res/&lt;port&gt;/config.json</code>
+                  写入{" "}
+                  <code className="font-mono text-xs">
+                    res/&lt;port&gt;/config.json
+                  </code>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <IdentifierBlock label="issuer（jwt_external_issuers[].iss）" value={data.issuer} />
+                <IdentifierBlock
+                  label="issuer（jwt_external_issuers[].iss）"
+                  value={data.issuer}
+                />
                 <IdentifierBlock label="jwks_uri" value={data.jwks_uri} />
-                <IdentifierBlock label="external_auth_url" value={data.issuer} />
+                <IdentifierBlock
+                  label="external_auth_url"
+                  value={data.issuer}
+                />
               </CardContent>
             </Card>
           </motion.div>
@@ -68,7 +87,10 @@ export function IntegrationPage() {
                 <IdentifierBlock label="当前 kid" value={data.active_kid} />
                 <IdentifierBlock label="指纹" value={data.active_fingerprint} />
                 {data.all_kids.length > 1 ? (
-                  <IdentifierBlock label="全部 kid" value={data.all_kids.join("\n")} />
+                  <IdentifierBlock
+                    label="全部 kid"
+                    value={data.all_kids.join("\n")}
+                  />
                 ) : null}
               </CardContent>
             </Card>
@@ -80,7 +102,10 @@ export function IntegrationPage() {
                 <CardTitle>令牌</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
-                <Meta label="external_token 有效期" value={`${data.token_ttl} 秒`} />
+                <Meta
+                  label="external_token 有效期"
+                  value={`${data.token_ttl} 秒`}
+                />
                 <Meta label="ticket 有效期" value={`${data.ticket_ttl} 秒`} />
                 <Meta label="注册策略" value={data.registration_mode} />
                 <Meta label="发现文档" value={data.discovery_uri} mono />
@@ -96,10 +121,17 @@ export function IntegrationPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {data.instances.map((item) => (
-                  <div key={item.id} className="rounded-lg border bg-muted px-4 py-3">
+                  <div
+                    key={item.id}
+                    className="rounded-lg border bg-muted px-4 py-3"
+                  >
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium">{item.display_name}</span>
-                      <span className="font-mono text-xs text-muted-foreground">{item.id}</span>
+                      <span className="text-sm font-medium">
+                        {item.display_name}
+                      </span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {item.id}
+                      </span>
                     </div>
                     <div className="mt-1 break-all font-mono text-xs text-muted-foreground">
                       {item.base_url}
@@ -120,11 +152,25 @@ export function IntegrationPage() {
   );
 }
 
-function Meta({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Meta({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   return (
     <div>
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      <div className={mono ? "mt-0.5 break-all font-mono text-sm" : "mt-0.5 text-sm"}>{value}</div>
+      <div
+        className={
+          mono ? "mt-0.5 break-all font-mono text-sm" : "mt-0.5 text-sm"
+        }
+      >
+        {value}
+      </div>
     </div>
   );
 }

@@ -82,6 +82,17 @@ app = FastAPI(title="TouchFish Auth", version="0.1.0", lifespan=lifespan,
               docs_url=None, redoc_url=None)
 
 
+@app.exception_handler(Exception)
+async def unhandled_exception(request: Request, exc: Exception):
+    """统一未处理异常的响应体格式。。
+    """
+    log.exception("未处理异常 %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"error": {"code": "internal_error", "message": "服务器内部错误"}},
+    )
+
+
 @app.middleware("http")
 async def guard(request: Request, call_next):
     if request.url.path.startswith("/api/") and not csrf_ok(request):

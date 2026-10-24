@@ -5,10 +5,20 @@ import { Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { PageWrapper, listContainerVariants, listItemVariants } from "@/components/ui/motion";
+import {
+  PageWrapper,
+  listContainerVariants,
+  listItemVariants,
+} from "@/components/ui/motion";
 import { ApiError, api } from "@/lib/api";
 import { formatTime } from "@/lib/format";
 import { useSession } from "@/lib/session";
@@ -65,8 +75,14 @@ export function AccountPage() {
               <Row label="显示名" value={user.display_name ?? user.username} />
               <Row label="邮箱" value={user.email ?? "未设置"} />
               <Row label="创建时间" value={formatTime(user.created_at)} />
-              <Row label="平台密码" value={user.has_password ? "已设置" : "未设置"} />
-              <Row label="权限" value={user.role === "admin" ? "管理员" : "普通用户"} />
+              <Row
+                label="平台密码"
+                value={user.has_password ? "已设置" : "未设置"}
+              />
+              <Row
+                label="权限"
+                value={user.role === "admin" ? "管理员" : "普通用户"}
+              />
             </CardContent>
           </Card>
         </motion.div>
@@ -74,7 +90,9 @@ export function AccountPage() {
         <motion.div variants={listItemVariants}>
           <Card className="h-full">
             <CardHeader>
-              <CardTitle>{user.has_password ? "修改密码" : "设置密码"}</CardTitle>
+              <CardTitle>
+                {user.has_password ? "修改密码" : "设置密码"}
+              </CardTitle>
               <CardDescription>
                 {user.has_password
                   ? "修改后其他设备会被退出登录"
@@ -132,7 +150,15 @@ export function AccountPage() {
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-border pb-2 last:border-0 last:pb-0">
       <span className="text-xs font-medium text-muted-foreground">{label}</span>

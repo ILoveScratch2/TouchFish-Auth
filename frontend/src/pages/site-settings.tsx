@@ -5,10 +5,20 @@ import { Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { PageWrapper, listContainerVariants, listItemVariants } from "@/components/ui/motion";
+import {
+  PageWrapper,
+  listContainerVariants,
+  listItemVariants,
+} from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/primitives";
 import { ApiError, api, type AdminSettings, type SettingSpec } from "@/lib/api";
 import { invalidateSiteConfig } from "@/lib/site";
@@ -40,7 +50,9 @@ const ENUM_LABEL: Record<string, string> = {
 
 export function SiteSettingsPage() {
   const [data, setData] = useState<AdminSettings | null>(null);
-  const [draft, setDraft] = useState<Record<string, string | number | boolean>>({});
+  const [draft, setDraft] = useState<Record<string, string | number | boolean>>(
+    {},
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -262,7 +274,11 @@ function SettingField({
         min={spec.min}
         max={spec.max}
         onChange={(event) =>
-          onChange(spec.type === "int" ? Number(event.target.value || 0) : event.target.value)
+          onChange(
+            spec.type === "int"
+              ? Number(event.target.value || 0)
+              : event.target.value,
+          )
         }
       />
       {spec.type === "int" && spec.min !== undefined ? (
@@ -275,7 +291,9 @@ function SettingField({
 }
 
 function Flag() {
-  return <span className="size-1.5 rounded-full bg-primary" aria-label="已修改" />;
+  return (
+    <span className="size-1.5 rounded-full bg-primary" aria-label="已修改" />
+  );
 }
 
 /**
@@ -285,9 +303,11 @@ function Flag() {
  */
 function CaptchaProbe() {
   const [pending, setPending] = useState(false);
-  const [result, setResult] = useState<{ hint: string; codes: string[]; message: string } | null>(
-    null,
-  );
+  const [result, setResult] = useState<{
+    hint: string;
+    codes: string[];
+    message: string;
+  } | null>(null);
   const [error, setError] = useState("");
 
   async function probe() {
@@ -314,7 +334,8 @@ function CaptchaProbe() {
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        探测用假 token 请求服务商：Secret 正确会返回 token 无效；Secret 错误会直接报错。
+        探测用假 token 请求服务商：Secret 正确会返回 token 无效；Secret
+        错误会直接报错。
       </p>
       {error ? <p className="text-xs text-error-foreground">{error}</p> : null}
       {result ? (

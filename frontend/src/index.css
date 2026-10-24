@@ -50,10 +50,12 @@
     --sidebar-border: 0 0% 90%;
     --sidebar-ring: 217 91% 53%;
     --font-display: "Noto Serif SC", "Source Han Serif SC", serif;
-    --font-sans-cjk: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB",
-      "Microsoft YaHei", "Segoe UI", sans-serif;
-    --font-code: "Sarasa Mono SC", ui-monospace, SFMono-Regular, "SF Mono",
-      Menlo, Consolas, "Liberation Mono", monospace;
+    --font-sans-cjk:
+      "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+      "Segoe UI", sans-serif;
+    --font-code:
+      "Sarasa Mono SC", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+      Consolas, "Liberation Mono", monospace;
   }
 
   .dark {

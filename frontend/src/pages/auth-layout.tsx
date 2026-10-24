@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   authContainerVariants,
   authItemVariants,
@@ -18,8 +24,13 @@ interface AuthLayoutProps {
   children: ReactNode;
 }
 
-
-export function AuthLayout({ title, description, eyebrow, footer, children }: AuthLayoutProps) {
+export function AuthLayout({
+  title,
+  description,
+  eyebrow,
+  footer,
+  children,
+}: AuthLayoutProps) {
   const reduced = useReducedMotion();
   return (
     <div className="h-dvh overflow-y-auto overscroll-contain p-4">
@@ -45,7 +56,11 @@ export function AuthLayout({ title, description, eyebrow, footer, children }: Au
                 variants={reduced ? undefined : authItemVariants}
                 className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border bg-background p-2 text-foreground"
               >
-                <img src="/logo.png" alt="TouchFish" className="h-full w-full object-contain" />
+                <img
+                  src="/logo.png"
+                  alt="TouchFish"
+                  className="h-full w-full object-contain"
+                />
               </motion.div>
               {eyebrow ? (
                 <motion.div variants={reduced ? undefined : authItemVariants}>
@@ -68,7 +83,9 @@ export function AuthLayout({ title, description, eyebrow, footer, children }: Au
               initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={
-                reduced ? { duration: 0 } : { duration: 0.3, ease: easings.easeOutExpo, delay: 0.25 }
+                reduced
+                  ? { duration: 0 }
+                  : { duration: 0.3, ease: easings.easeOutExpo, delay: 0.25 }
               }
               className="mt-4 text-center text-sm text-muted-foreground"
             >
@@ -91,7 +108,10 @@ export function AuthItem({
 }) {
   const reduced = useReducedMotion();
   return (
-    <motion.div variants={reduced ? undefined : authItemVariants} className={className}>
+    <motion.div
+      variants={reduced ? undefined : authItemVariants}
+      className={className}
+    >
       {children}
     </motion.div>
   );
