@@ -14,3 +14,15 @@ frontend/tsconfig.tsbuildinfo
 
 # 测试产物
 backend/tests/_keys/
+
+# Other
+*.log
+*.sqlite3
+*.db
+*.pem
+tests/
+
+!README.md
+!CONTRIBUTING.md
+!CODE_OF_CONDUCT.md
+*.md

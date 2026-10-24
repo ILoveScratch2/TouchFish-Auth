@@ -1,6 +1,6 @@
 # TouchFish Auth
 
-外部登录平台。为 TouchFish V5 签发外部 JWT（RS256 + JWKS），
+*外部登录平台。为 TouchFish V5 签发外部 JWT（RS256 + JWKS）*
 
 
 - 后端：Python 3.11+ / FastAPI / SQLite
@@ -11,7 +11,7 @@
 
 ```bash
 cd backend
-python -m venv .venv && .venv/Scripts/activate      # Windows
+python -m venv .venv && .venv/Scripts/activate      # 虚拟环境，可不使用
 pip install -r requirements.txt
 cp .env.example .env                                 # 填 AUTH_BASE_URL 与 AUTH_MASTER_KEY
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
@@ -22,28 +22,27 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```bash
 cd frontend
 npm install
-npm run dev        # http://127.0.0.1:5173，/api 与 /.well-known 已代理到 8000
+npm run dev        # http://127.0.0.1:5173 （/api 与 /.well-known 已代理到 8000）
 npm run build      # 产物给后端托管
 ```
 
-`AUTH_BASE_URL` 与 `AUTH_MASTER_KEY` 是必填项，缺失时启动直接报错并给出生成命令。
-仓库里**没有任何生产地址默认值** —— 按约定，地址在部署时确定。
+`AUTH_BASE_URL` 与 `AUTH_MASTER_KEY` 必填。
 
 ## 管理员
 
-**没有"第一个注册用户自动成为管理员"这类隐式规则**（部署顺序会被人利用）。
 管理员只能由本机命令授予：
 
 ```bash
 cd backend
-.venv/Scripts/python -m app.cli list              # 列出用户与角色
-.venv/Scripts/python -m app.cli promote alice     # 授予管理员
-.venv/Scripts/python -m app.cli demote alice      # 收回（最后一个管理员会被拒绝）
+.venv/Scripts/python -m app.cli list              # 列出用户
+.venv/Scripts/python -m app.cli promote alice     # 授予
+.venv/Scripts/python -m app.cli demote alice      # 收回
 .venv/Scripts/python -m app.cli instances         # 列出 TFV5 实例
 ```
 
 授予后该用户**重新登录**（或刷新页面）
 
+## Testing
 
 
 ### 使用 Cloudflare 测试密钥
@@ -57,7 +56,11 @@ Turnstile 提供一对公开测试密钥，可以在不注册域名的情况下�
 
 两者必须成对使用。混用（例如拿测试 sitekey 配真实 secret）会得到 `invalid-input-secret`。
 
-## TFV5 侧配置
+## 配置
+
+使用管理员权限账户登入后台修改 TouchFish-Auth 配置。
+
+### TouchFish V5 Server 配置
 
 写入 `res/<port>/config.json`：
 
@@ -81,24 +84,25 @@ Turnstile 提供一对公开测试密钥，可以在不注册域名的情况下�
 }
 ```
 
-- 生产环境 `iss` 必须是公网 HTTPS，且与 `AUTH_ISSUER` **完全一致**（含端口、不含末尾斜杠）。
+- 生产环境 `iss` 必须是公网 HTTPS，且与 `AUTH_ISSUER` **完全一致**（含端口、不含末尾斜杠）
 - 多实例部署配 `audience`：平台侧实例的 `audience` 与服务器侧
   `jwt_external_issuers[].audience` 要成对填写。二者都留空时，token 没 `aud`，
-  而"不配 `audience` 就不校验"是双方的默认行为
-  一个为实例 A 换出的 token
-  在实例 B 同样通过验签
-- 本地加 `"allow_insecure_http": true`，且地址用 `127.0.0.1` 而不是 `localhost`
+  而"不配 `audience` 就不校验"是双方的默认行为。
+  一个为实例 A 换出的 token 将在实例 B 同样通过验签。
+- 本地测试请加入 `"allow_insecure_http": true`，且地址用 `127.0.0.1` 而不是 `localhost`（TouchFish V5 Proxy 仅支持 `127.0.0.1`）。
 
 
 ## 已知限制
 
-- 客户端 Web 端暂不支持外部登录闭环（浏览器没有 InAppWebView 的 JS 桥），
-  只在新标签页打开授权页并提示改用客户端。
+- 客户端 Web 端暂不支持外部登录闭环（浏览器没有 InAppWebView 的 JS 桥）
 - 客户端**不调用**平台的账号接口（`/api/auth/login`、`/api/auth/register`），只走两条路：
-  TFV5 账密直登（`/auth/login`）与平台代授权（WebView 打开 `/authorize` → ticket → `/auth/external/login`）。
-  站点的人机验证、邮箱验证对客户端没有影响，也**不需要**客户端适配——
-  这两步发生在 WebView 加载的平台网页里，已实现。
+  TFV5 账密直登（`/auth/login`）与平台代授权（WebView 打开 `/authorize` ticket `/auth/external/login`）。
+  站点的人机验证、邮箱验证对客户端没有影响，也**不需要**客户端适配
   只有将来在客户端内做**原生**的平台账号登录/注册界面时，才需要补验证码与验证码输入框。
-- 客户端授权页弹层的兜底提示文案为硬编码中文，未走 l10n。
+- 无国际化（我没有时间）
 - Turnstile 在 WebView 内的兼容性弱于普通浏览器。
 - GitHub 等第三方登录未开始
+
+## License
+
+本项目采用 MIT 许可证，详见 [LICENSE](LICENSE) 文件。
