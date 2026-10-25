@@ -1,10 +1,12 @@
 """管理员接口。
 
-权限来自 users.role = 'admin'，用 CLI 授予：
-    python -m app.cli promote <username>
+users.role = 'admin'，用 CLI 授予：
+
+python -m app.cli promote <username>
 """
 from __future__ import annotations
 
+import secrets
 import time
 
 from fastapi import APIRouter, Request
@@ -13,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from ..deps import api_error, client_ip, current_user, user_agent
 from ..runtime import get as get_runtime
+from ..security.sessions import revoke_all_except
 from ..services import captcha as captcha_service
 from ..services import instances as instances_repo
 from ..services import site
@@ -37,6 +40,23 @@ class RoleBody(BaseModel):
 
 class StatusBody(BaseModel):
     status: str = Field(pattern="^(active|suspended)$")
+
+
+class ResetPasswordBody(BaseModel):
+    new_password: str | None = Field(default=None, min_length=8, max_length=128)
+
+
+class CreateUserBody(BaseModel):
+    username: str = Field(min_length=2, max_length=32)
+    password: str | None = Field(default=None, min_length=8, max_length=128)
+    email: str | None = Field(default=None, max_length=128)
+    role: str = Field(default="user", pattern="^(user|admin)$")
+
+
+def _random_password() -> str:
+    """去掉 0/O/1/I/l 等易混字符，便于管理员人工转述。"""
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"
+    return "".join(secrets.choice(alphabet) for _ in range(16))
 
 
 class InstanceBody(BaseModel):
@@ -265,6 +285,72 @@ def logout_all(user_id: str, request: Request):
 
 
 # ---------- 人机验证自检 ----------
+
+@router.post("/api/admin/users")
+def create_user(body: CreateUserBody, request: Request):
+    """管理员直接建号
+    """
+    admin, error = _require_admin(request)
+    if error:
+        return error
+    runtime = get_runtime()
+
+    temporary: str | None = None
+    password = body.password
+    if not password:
+        temporary = _random_password()
+        password = temporary
+
+    user_id, message = users_service.create(
+        runtime.db, body.username, password, body.email or None, status="active",
+    )
+    if user_id is None:
+        return api_error(400, "create_failed", message)
+
+    if body.role == "admin":
+        users_service.set_role(runtime.db, user_id, "admin")
+
+    row = users_service.get(runtime.db, user_id)
+    runtime.db.audit("admin.user_created", admin["user_id"], client_ip(request),
+                     user_agent(request), detail=body.username.strip())
+
+    payload: dict[str, object] = {
+        "ok": True,
+        "user": users_service.public_view(row),
+    }
+    if temporary is not None:
+        payload["temporary_password"] = temporary
+    return JSONResponse(payload, status_code=201)
+
+
+@router.post("/api/admin/users/{user_id}/reset-password")
+def reset_user_password(user_id: str, body: ResetPasswordBody, request: Request):
+    """管理员重置用户密码
+    """
+    admin, error = _require_admin(request)
+    if error:
+        return error
+    runtime = get_runtime()
+    target = users_service.get(runtime.db, user_id)
+    if target is None:
+        return api_error(404, "user_not_found", "用户不存在")
+
+    temporary: str | None = None
+    password = body.new_password
+    if not password:
+        temporary = _random_password()
+        password = temporary
+
+    users_service.set_password(runtime.db, user_id, password)
+    revoked = revoke_all_except(runtime.db, user_id, None)
+    runtime.db.audit("admin.password_reset", admin["user_id"], client_ip(request),
+                     user_agent(request), detail=target["username"])
+
+    payload: dict[str, object] = {"ok": True, "revoked": revoked}
+    if temporary is not None:
+        payload["temporary_password"] = temporary
+    return JSONResponse(payload)
+
 
 @router.post("/api/admin/captcha/test")
 def captcha_test(request: Request):

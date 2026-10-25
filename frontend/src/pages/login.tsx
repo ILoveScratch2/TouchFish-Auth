@@ -197,6 +197,19 @@ export function LoginPage() {
           </Field>
         </AuthItem>
 
+        {mode === "platform" ? (
+          <AuthItem>
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                忘记密码？
+              </Link>
+            </div>
+          </AuthItem>
+        ) : null}
+
         {needCaptcha && site?.captcha.provider ? (
           <AuthItem>
             <CaptchaWidget

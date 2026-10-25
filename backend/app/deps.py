@@ -21,13 +21,12 @@ CSRF_EXEMPT = {
     "/api/auth/login",
     "/api/auth/register",
     "/api/auth/ticket",   # 原生客户端调用，无浏览器 cookie
-    # 邮箱验证在建立会话之前发生，此时还没有 csrf cookie
     "/api/auth/verify-email",
     "/api/auth/resend-verification",
-    # 匿名场景的"用 TFV5 凭据登录"：它靠凭据认证而非 cookie 会话，
-    # 且主场景就是首次访问（此时必然没有 csrf cookie）。不加豁免该功能永远 403
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
     "/api/connections/tfv5-login",
-    "/api/dev/throttle/reset",  # 仅 AUTH_DEV_MAIL=1 时存在
+    "/api/dev/throttle/reset",  # 仅 AUTH_DEV_MAIL=1
     "/api/health",
 }
 
@@ -57,8 +56,6 @@ def origin_allowed(request: Request) -> bool:
     host = (request.headers.get("host") or "").lower()
     if not host:
         return False
-    # 同源必须同协议：http://auth 发起的请求打到 https://auth 会被判跨站，
-    # 避免在 http 侧被劫持时绕过同源闸门（实际风险低，但加严无成本）。
     try:
         origin_scheme = urlparse(origin).scheme.lower()
     except ValueError:
@@ -104,7 +101,7 @@ def csrf_ok(request: Request) -> bool:
     if request.method in ("GET", "HEAD", "OPTIONS"):
         return True
     if request.url.path in CSRF_EXEMPT:
-        # 免 token，但浏览器跨站请求仍需同源
+        # 免 token，但浏览器跨站请求需同源
         return origin_allowed(request)
     cookie = request.cookies.get(CSRF_COOKIE) or ""
     header = request.headers.get(CSRF_HEADER) or ""

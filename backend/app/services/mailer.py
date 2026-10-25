@@ -77,3 +77,12 @@ def verification_body(site_name: str, code: str, ttl_minutes: int = 15) -> str:
         f"验证码：{code}\n\n"
         f"{ttl_minutes} 分钟内有效。如果不是你本人操作，请忽略这封邮件。\n"
     )
+
+
+def reset_body(site_name: str, code: str, ttl_minutes: int = 15) -> str:
+    return (
+        f"你正在重置 {site_name} 的登录密码。\n\n"
+        f"验证码：{code}\n\n"
+        f"{ttl_minutes} 分钟内有效。如果不是你本人操作，请忽略这封邮件——"
+        f"不输入验证码密码不会改变。\n"
+    )

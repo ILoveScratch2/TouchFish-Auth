@@ -44,8 +44,13 @@ cd backend
 
 ## Testing
 
+测试文件暂不纳入 VCS。
 
-### 使用 Cloudflare 测试密钥
+可设置环境变量 `AUTH_DEV_MAIL=1` 来启用开发模式下的邮件功能，便于测试密码重置等功能。（使用内部 API `/api/dev/outbox` 获取邮件内容）
+
+### Captcha
+
+#### Turnstile
 
 Turnstile 提供一对公开测试密钥，可以在不注册域名的情况下联调：
 
@@ -54,7 +59,13 @@ Turnstile 提供一对公开测试密钥，可以在不注册域名的情况下�
 | 永远通过 | `1x00000000000000000000AA` | `1x0000000000000000000000000000000AA` |
 | 永远拦截 | `2x00000000000000000000AB` | `2x0000000000000000000000000000000AA` |
 
-两者必须成对使用。混用（例如拿测试 sitekey 配真实 secret）会得到 `invalid-input-secret`。
+两者必须成对使用。
+
+#### hCaptcha
+
+请参阅 [hCaptcha 官方文档](https://docs.hcaptcha.com/) 获取测试密钥和配置方法。
+
+TouchFish-Auth 推荐使用 Turnstile 作为人机验证方案。
 
 ## 配置
 
@@ -84,9 +95,11 @@ Turnstile 提供一对公开测试密钥，可以在不注册域名的情况下�
 }
 ```
 
+注意：
+
 - 生产环境 `iss` 必须是公网 HTTPS，且与 `AUTH_ISSUER` **完全一致**（含端口、不含末尾斜杠）
 - 多实例部署配 `audience`：平台侧实例的 `audience` 与服务器侧
-  `jwt_external_issuers[].audience` 要成对填写。二者都留空时，token 没 `aud`，
+  `jwt_external_issuers[].audience` 要成对填写。二者都留空时，token 没有 `aud`，
   而"不配 `audience` 就不校验"是双方的默认行为。
   一个为实例 A 换出的 token 将在实例 B 同样通过验签。
 - 本地测试请加入 `"allow_insecure_http": true`，且地址用 `127.0.0.1` 而不是 `localhost`（TouchFish V5 Proxy 仅支持 `127.0.0.1`）。

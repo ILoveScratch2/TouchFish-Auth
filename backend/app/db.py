@@ -127,6 +127,21 @@ CREATE TABLE IF NOT EXISTS email_verifications (
 );
 CREATE INDEX IF NOT EXISTS idx_verify_user ON email_verifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_verify_expires ON email_verifications(expires_at);
+
+-- 密码重置
+CREATE TABLE IF NOT EXISTS password_resets (
+    id         TEXT PRIMARY KEY,
+    user_id    TEXT NOT NULL,
+    email      TEXT NOT NULL,
+    email_key  TEXT NOT NULL,
+    code_hash  TEXT NOT NULL,
+    attempts   INTEGER NOT NULL DEFAULT 0,
+    created_at REAL NOT NULL,
+    expires_at REAL NOT NULL,
+    consumed_at REAL
+);
+CREATE INDEX IF NOT EXISTS idx_resets_email ON password_resets(email_key);
+CREATE INDEX IF NOT EXISTS idx_resets_expires ON password_resets(expires_at);
 """
 
 
@@ -175,6 +190,7 @@ class Db:
         保留策略：
           - tickets：过期即删（一次性凭据，过期后无任何用途）
           - email_verifications：过期后保留 1 天便于排查，之后删
+          - password_resets：同 email_verifications
           - sessions：过期后保留 7 天（供"登录设备"页展示历史）；
             **不区分是否显式吊销** —— 自然过期而不登出的会话同样要回收，
             否则它们会永久堆积
@@ -187,6 +203,8 @@ class Db:
                 "DELETE FROM tickets WHERE expires_at < ?", (now - day,)),
             "email_verifications": self.execute(
                 "DELETE FROM email_verifications WHERE expires_at < ?", (now - day,)),
+            "password_resets": self.execute(
+                "DELETE FROM password_resets WHERE expires_at < ?", (now - day,)),
             "sessions": self.execute(
                 "DELETE FROM sessions WHERE expires_at < ?", (now - 7 * day,)),
             "audit_log": self.execute(

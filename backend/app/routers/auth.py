@@ -21,6 +21,7 @@ from ..security.sessions import (
 from ..services import gate
 from ..services import instances as instances_repo
 from ..services import mailer, site, users as users_service, verification
+from ..services import password_reset
 from ..services.registration import registration_allowed
 
 router = APIRouter()
@@ -52,6 +53,17 @@ class VerifyBody(BaseModel):
 class ResendBody(BaseModel):
     identifier: str = Field(min_length=1, max_length=64)
     password: str = Field(min_length=1, max_length=128)
+
+
+class ForgotBody(BaseModel):
+    identifier: str = Field(min_length=1, max_length=128)
+    captcha_token: str | None = None
+
+
+class ResetBody(BaseModel):
+    email: str = Field(min_length=3, max_length=128)
+    code: str = Field(min_length=4, max_length=12)
+    new_password: str = Field(min_length=8, max_length=128)
 
 
 def _mask_email(email: str) -> str:
@@ -223,6 +235,76 @@ def resend_verification(body: ResendBody, request: Request):
         "verification_id": row_id,
         "email": _mask_email(email),
     })
+
+
+@router.post("/api/auth/forgot-password")
+def forgot_password(body: ForgotBody, request: Request):
+    """发送密码重置验证码。
+
+    账号不存在、未绑定邮箱、处于冷却期 202（偷偷告诉你这其实和我家地址有关）
+    """
+    runtime = get_runtime()
+    db, settings = runtime.db, runtime.settings
+    values = site.all_values(db, settings)
+    ip, ua = client_ip(request), user_agent(request)
+
+    if values["captcha_enabled"]:
+        failed = gate.check_captcha(db, values, body.captcha_token, ip=ip, ua=ua)
+        if failed is not None:
+            return api_error(400, "captcha_failed", failed.message or "人机验证未通过")
+
+    generic = JSONResponse({
+        "ok": True,
+        "message": "如果该账号存在且绑定了邮箱，重置验证码已发送。",
+    }, status_code=202)
+
+    row = users_service.find_by_login(db, body.identifier)
+    if row is None or not row["email"] or row["status"] != "active":
+        db.audit("password_reset.requested", None, ip, ua,
+                 detail=(body.identifier or "").strip()[:32])
+        return generic
+
+    if password_reset.cooling_down(db, row["id"]) > 0:
+        db.audit("password_reset.cooling", row["id"], ip, ua)
+        return generic
+
+    _, code = password_reset.issue(db, row["id"], row["email"])
+    ok, error = mailer.send(
+        values, row["email"],
+        f"{values['site_name']} 密码重置",
+        mailer.reset_body(str(values["site_name"]), code),
+        dev_mail=settings.dev_mail,
+    )
+    if not ok:
+        db.audit("mail.failed", row["id"], ip, ua, detail=error)
+        return api_error(502, "mail_failed", error)
+    db.audit("password_reset.sent", row["id"], ip, ua,
+             detail=_mask_email(row["email"]))
+    return generic
+
+
+@router.post("/api/auth/reset-password")
+def reset_password(body: ResetBody, request: Request):
+    runtime = get_runtime()
+    db = runtime.db
+    ip, ua = client_ip(request), user_agent(request)
+
+    user_id = password_reset.verify_by_email(db, body.email, body.code)
+    if user_id is None:
+        db.audit("password_reset.failed", None, ip, ua,
+                 detail=_mask_email(body.email))
+        return api_error(400, "code_invalid", "验证码不正确或已过期")
+
+    row = users_service.get(db, user_id)
+    if row is None:
+        return api_error(404, "user_not_found", "账户不存在")
+    if row["status"] != "active":
+        return api_error(403, "account_inactive", "该账户当前不可重置密码")
+
+    users_service.set_password(db, user_id, body.new_password)
+    revoked = revoke_all_except(db, user_id, None)
+    db.audit("password_reset.completed", user_id, ip, ua)
+    return JSONResponse({"ok": True, "revoked": revoked})
 
 
 @router.post("/api/auth/login")

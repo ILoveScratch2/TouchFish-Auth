@@ -198,6 +198,22 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  /** 请求密码重置验证码。后端返回 202 */
+  forgotPassword: (body: { identifier: string; captcha_token?: string }) =>
+    request<{ ok: boolean; message: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  resetPassword: (body: {
+    email: string;
+    code: string;
+    new_password: string;
+  }) =>
+    request<{ ok: boolean; revoked: number }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
   instances: () => request<{ instances: Instance[] }>("/api/instances"),
   connections: () => request<{ connections: Connection[] }>("/api/connections"),
   bind: (body: {
@@ -306,6 +322,34 @@ export const api = {
       `/api/admin/users/${userId}/logout-all`,
       {
         method: "POST",
+      },
+    ),
+  /** 不传 newPassword 时后端生成一次性临时密码，仅在本次响应里返回。 */
+  adminResetPassword: (userId: string, newPassword?: string) =>
+    request<{ ok: boolean; revoked: number; temporary_password?: string }>(
+      `/api/admin/users/${userId}/reset-password`,
+      {
+        method: "POST",
+        body: JSON.stringify({ new_password: newPassword ?? null }),
+      },
+    ),
+  /** 管理员直接建号。不传 password 时后端生成一次性临时密码。 */
+  adminCreateUser: (body: {
+    username: string;
+    password?: string;
+    email?: string;
+    role?: "user" | "admin";
+  }) =>
+    request<{ ok: boolean; user: User; temporary_password?: string }>(
+      "/api/admin/users",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          username: body.username,
+          password: body.password ?? null,
+          email: body.email ?? null,
+          role: body.role ?? "user",
+        }),
       },
     ),
   adminSettings: () => request<AdminSettings>("/api/admin/settings"),
