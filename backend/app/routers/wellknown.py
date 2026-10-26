@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 
 from ..runtime import get as get_runtime
 from ..services import instances as instances_repo
-from ..services import site
+from ..services import oauth, site
 
 router = APIRouter()
 
@@ -65,7 +65,7 @@ def auth_config() -> JSONResponse:
             "enabled": True,
             "hint": "使用 TouchFish 服务器账号密码登录",
         })
-    # oauth2 方式在接入第三方后动态出现，客户端遇到未知 kind 应跳过
+    methods.extend(oauth.methods(runtime.db, runtime.settings, base))
 
     return JSONResponse(
         {

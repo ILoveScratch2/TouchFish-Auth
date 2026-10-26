@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from .db import Db
 from .deps import api_error, csrf_ok
-from .routers import admin, auth, connections, tokens, wellknown
+from .routers import admin, admin_oauth, auth, connections, oauth, tokens, wellknown
 from .runtime import get as get_runtime
 from .runtime import init as init_runtime
 from .security.signer import KeyStore
@@ -141,9 +141,11 @@ def dev_outbox():
 
 app.include_router(wellknown.router)
 app.include_router(auth.router)
+app.include_router(oauth.router)
 app.include_router(connections.router)
 app.include_router(tokens.router)
 app.include_router(admin.router)
+app.include_router(admin_oauth.router)
 
 
 @app.get("/{full_path:path}")

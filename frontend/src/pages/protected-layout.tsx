@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import {
   Code2,
+  Fingerprint,
   Link2,
   MonitorSmartphone,
   Plug,
@@ -43,6 +44,12 @@ const adminNav: NavItem[] = [
     to: "/admin/settings",
     label: "站点配置",
     icon: <Settings2 />,
+    group: "管理员",
+  },
+  {
+    to: "/admin/oauth",
+    label: "第三方登录",
+    icon: <Fingerprint />,
     group: "管理员",
   },
   {

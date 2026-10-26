@@ -105,6 +105,28 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_at ON audit_log(at);
 
+-- 可配置的第三方登录平台（tf auth 作为 client）
+CREATE TABLE IF NOT EXISTS oauth_providers (
+    id             TEXT PRIMARY KEY,
+    provider_key   TEXT NOT NULL UNIQUE,
+    display_name   TEXT NOT NULL,
+    client_id      TEXT NOT NULL,
+    client_secret_enc BLOB,                -- AES-GCM 封装
+    authorize_url  TEXT NOT NULL,
+    token_url      TEXT NOT NULL,
+    userinfo_url   TEXT NOT NULL,
+    emails_url     TEXT,                   -- 可选：GitHub 风格需要额外拉一次邮箱列表
+    scope          TEXT NOT NULL DEFAULT '',
+    token_auth_method TEXT NOT NULL DEFAULT 'post',  -- post | basic
+    uid_field      TEXT NOT NULL DEFAULT 'id',
+    username_field TEXT NOT NULL DEFAULT 'login',
+    email_field    TEXT NOT NULL DEFAULT 'email',
+    allowed_hosts  TEXT NOT NULL DEFAULT '',  -- WebView list
+    enabled        INTEGER NOT NULL DEFAULT 1,
+    created_at     REAL NOT NULL,
+    updated_at     REAL NOT NULL
+);
+
 -- 站点配置（管理员可改，键值对；敏感值单独存，读取时不回显）
 CREATE TABLE IF NOT EXISTS settings (
     key        TEXT PRIMARY KEY,
@@ -164,6 +186,15 @@ class Db:
         columns = {row[1] for row in self._conn.execute("PRAGMA table_info(users)")}
         if "role" not in columns:
             self._conn.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'")
+
+        provider_columns = {
+            row[1] for row in self._conn.execute("PRAGMA table_info(oauth_providers)")
+        }
+        if provider_columns and "token_auth_method" not in provider_columns:
+            self._conn.execute(
+                "ALTER TABLE oauth_providers ADD COLUMN"
+                " token_auth_method TEXT NOT NULL DEFAULT 'post'"
+            )
 
     def query(self, sql: str, params: Sequence[Any] = ()) -> list[sqlite3.Row]:
         with self._lock:

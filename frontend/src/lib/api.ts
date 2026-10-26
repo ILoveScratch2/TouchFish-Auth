@@ -92,6 +92,14 @@ export type SessionRow = {
   current: boolean;
 };
 
+export type OAuthAccountProvider = {
+  id: string;
+  name: string;
+  linked: boolean;
+  login: string | null;
+  orphan?: boolean;
+};
+
 export type AuthMethod = {
   id: string;
   kind: "password" | "tfv5" | "oauth2";
@@ -118,6 +126,7 @@ export type SiteConfig = {
   };
   email_verification: boolean;
   tfv5_login_auto_signup: boolean;
+  oauth_providers: { id: string; name: string }[];
   oauth_apps: {
     implemented: boolean;
     self_service: boolean;
@@ -125,6 +134,47 @@ export type SiteConfig = {
   };
   registration: { allowed: boolean; reason: string };
   instance: Instance | null;
+};
+
+export type OAuthProvider = {
+  id: string;
+  provider_key: string;
+  display_name: string;
+  client_id: string;
+  client_secret_set: boolean;
+  authorize_url: string;
+  token_url: string;
+  userinfo_url: string;
+  emails_url: string;
+  scope: string;
+  token_auth_method: "post" | "basic";
+  uid_field: string;
+  username_field: string;
+  email_field: string;
+  allowed_hosts: string;
+  enabled: boolean;
+  complete: boolean;
+  linked_accounts: number;
+};
+
+export type OAuthTemplate = Record<string, string>;
+
+export type OAuthProviderInput = {
+  provider_key?: string;
+  display_name?: string;
+  client_id?: string;
+  client_secret?: string;
+  authorize_url?: string;
+  token_url?: string;
+  userinfo_url?: string;
+  emails_url?: string;
+  scope?: string;
+  token_auth_method?: "post" | "basic";
+  uid_field?: string;
+  username_field?: string;
+  email_field?: string;
+  allowed_hosts?: string;
+  enabled?: boolean;
 };
 
 export type SettingSpec = {
@@ -243,6 +293,15 @@ export const api = {
   revokeSession: (id: string) =>
     request<{ ok: boolean }>(`/api/auth/sessions/${id}`, { method: "DELETE" }),
 
+  oauthAccounts: () =>
+    request<{ providers: OAuthAccountProvider[]; has_password: boolean }>(
+      "/api/auth/oauth/accounts",
+    ),
+  oauthUnlink: (providerId: string) =>
+    request<{ ok: boolean }>(`/api/auth/oauth/accounts/${providerId}`, {
+      method: "DELETE",
+    }),
+
   authorizeComplete: (body: {
     client_id: string;
     state?: string;
@@ -332,6 +391,28 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ new_password: newPassword ?? null }),
       },
+    ),
+  /** 第三方登录平台（本平台作为 client） */
+  adminOauthProviders: () =>
+    request<{ providers: OAuthProvider[]; callback_base: string }>(
+      "/api/admin/oauth/providers",
+    ),
+  adminOauthTemplates: () =>
+    request<{ templates: OAuthTemplate[] }>("/api/admin/oauth/templates"),
+  adminCreateOauthProvider: (body: OAuthProviderInput) =>
+    request<{ ok: boolean; provider_key: string }>(
+      "/api/admin/oauth/providers",
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  adminUpdateOauthProvider: (id: string, body: OAuthProviderInput) =>
+    request<{ ok: boolean; provider_key: string }>(
+      `/api/admin/oauth/providers/${id}`,
+      { method: "PUT", body: JSON.stringify(body) },
+    ),
+  adminDeleteOauthProvider: (id: string, force = false) =>
+    request<{ ok: boolean; provider_key: string; linked_accounts: number }>(
+      `/api/admin/oauth/providers/${id}${force ? "?force=1" : ""}`,
+      { method: "DELETE" },
     ),
   /** 管理员直接建号。不传 password 时后端生成一次性临时密码。 */
   adminCreateUser: (body: {

@@ -7,6 +7,7 @@ from typing import Any
 
 from ..db import Db
 from ..settings import Settings
+from . import oauth
 
 # type: bool / int / str / text / enum / secret
 SPEC: dict[str, dict[str, Any]] = {
@@ -52,7 +53,7 @@ SPEC: dict[str, dict[str, Any]] = {
     "smtp_from": {"type": "str", "max": 128, "category": "email", "label": "发件人"},
     "smtp_tls": {"type": "bool", "category": "email", "label": "使用 TLS"},
 
-    # 第三方 OAuth 应用（功能未实现，先把策略定下来，接入时直接生效）
+    # 第三方应用（本平台作为 provider）not impl yet but we can still def this
     "oauth_apps_self_service": {"type": "bool", "category": "oauth",
                                 "label": "允许普通用户自助创建 OAuth 应用"},
     "oauth_apps_max_per_user": {"type": "int", "min": 1, "max": 100, "category": "oauth",
@@ -141,6 +142,7 @@ def public_config(db: Db, settings: Settings) -> dict[str, Any]:
             "site_key": values["captcha_site_key"] if values["captcha_enabled"] or values["captcha_on_login"] else "",
         },
         "email_verification": bool(values["email_verification"]),
+        "oauth_providers": oauth.public(db, settings),
         # 第三方应用策略：普通用户也要能看到"能不能自己建、能建几个"
         "oauth_apps": {
             "implemented": False,

@@ -7,7 +7,7 @@
 - 前端：React 19 + TypeScript + Tailwind 3.4 + Radix
 
 
-## 快速开始
+## 开始
 
 ```bash
 cd backend
@@ -75,6 +75,8 @@ TouchFish-Auth 推荐使用 Turnstile 作为人机验证方案。
 
 写入 `res/<port>/config.json`：
 
+参考配置：
+
 ```json
 {
   "allow_register": true,
@@ -99,22 +101,37 @@ TouchFish-Auth 推荐使用 Turnstile 作为人机验证方案。
 
 - 生产环境 `iss` 必须是公网 HTTPS，且与 `AUTH_ISSUER` **完全一致**（含端口、不含末尾斜杠）
 - 多实例部署配 `audience`：平台侧实例的 `audience` 与服务器侧
-  `jwt_external_issuers[].audience` 要成对填写。二者都留空时，token 没有 `aud`，
-  而"不配 `audience` 就不校验"是双方的默认行为。
-  一个为实例 A 换出的 token 将在实例 B 同样通过验签。
+  `jwt_external_issuers[].audience` 要成对填写
 - 本地测试请加入 `"allow_insecure_http": true`，且地址用 `127.0.0.1` 而不是 `localhost`（TouchFish V5 Proxy 仅支持 `127.0.0.1`）。
+
+### OAuth Client
+
+本平台可以作为 **OAuth client**，接任意标准的 OAuth2 / OIDC 平台（GitHub 等）。
+
+在后台 第三方登录（`/admin/oauth`）里可添加新的平台。
+
+
+回调地址在 OAuth 平台上配置为：
+
+```
+{AUTH_BASE_URL}/api/auth/oauth/{provider_key}/callback
+```
+
+注意：未验证邮箱无法完成第三方登录绑定或注册。
+
 
 
 ## 已知限制
 
-- 客户端 Web 端暂不支持外部登录闭环（浏览器没有 InAppWebView 的 JS 桥）
+- 客户端 Web 端暂不支持外部登录闭环（浏览器没有 InAppWebView 的 JS 桥）注：OAuth 仍然可用，但无法完成自动传回。
 - 客户端**不调用**平台的账号接口（`/api/auth/login`、`/api/auth/register`），只走两条路：
   TFV5 账密直登（`/auth/login`）与平台代授权（WebView 打开 `/authorize` ticket `/auth/external/login`）。
   站点的人机验证、邮箱验证对客户端没有影响，也**不需要**客户端适配
   只有将来在客户端内做**原生**的平台账号登录/注册界面时，才需要补验证码与验证码输入框。
 - 无国际化（我没有时间）
 - Turnstile 在 WebView 内的兼容性弱于普通浏览器。
-- GitHub 等第三方登录未开始
+- 不支持需要 PKCE 强制、JWT 客户端断言、或用户资料必须 POST 的 OAuth 平台；
+- 未实现 OAuth provider。
 
 ## License
 

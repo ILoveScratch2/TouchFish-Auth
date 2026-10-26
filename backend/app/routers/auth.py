@@ -10,9 +10,8 @@ from pydantic import BaseModel, Field
 from ..deps import api_error, client_ip, current_user, throttle_error, user_agent
 from ..runtime import get as get_runtime
 from ..security.passwords import verify_password
+from ..security.cookies import clear_auth_cookies, set_auth_cookies
 from ..security.sessions import (
-    CSRF_COOKIE,
-    SESSION_COOKIE,
     create_session,
     list_sessions,
     revoke_all_except,
@@ -74,27 +73,12 @@ def _mask_email(email: str) -> str:
     return f"{keep}{'*' * max(1, len(local) - 2)}@{domain}"
 
 
-def _set_auth_cookies(response: JSONResponse, request: Request, sid: str, csrf: str) -> None:
-    runtime = get_runtime()
-    secure = runtime.settings.cookie_secure and request.url.scheme == "https"
-    max_age = runtime.settings.session_ttl
-    response.set_cookie(SESSION_COOKIE, sid, max_age=max_age, httponly=True,
-                        secure=secure, samesite="lax", path="/")
-    response.set_cookie(CSRF_COOKIE, csrf, max_age=max_age, httponly=False,
-                        secure=secure, samesite="lax", path="/")
-
-
-def _clear_auth_cookies(response: JSONResponse) -> None:
-    response.delete_cookie(SESSION_COOKIE, path="/")
-    response.delete_cookie(CSRF_COOKIE, path="/")
-
-
 def _issue_session(request: Request, user_id: str, payload: dict) -> JSONResponse:
     runtime = get_runtime()
     sid, csrf = create_session(runtime.db, user_id, runtime.settings.session_ttl,
                                ip=client_ip(request), user_agent=user_agent(request))
     response = JSONResponse(payload)
-    _set_auth_cookies(response, request, sid, csrf)
+    set_auth_cookies(response, request, sid, csrf)
     return response
 
 
@@ -348,7 +332,7 @@ def logout(request: Request):
     if user:
         revoke_session(runtime.db, user["session_id"], user["user_id"])
     response = JSONResponse({"ok": True})
-    _clear_auth_cookies(response)
+    clear_auth_cookies(response)
     return response
 
 

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { MethodButton, OrDivider } from "@/components/method-button";
+import { OAuthButtons, oauthErrorText } from "@/components/oauth-buttons";
 import { ApiError, api, fetchAuthConfig, type AuthMethod } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { useSiteConfig } from "@/lib/site";
@@ -29,7 +30,10 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => {
+    const code = new URLSearchParams(window.location.search).get("oauth_error");
+    return code ? oauthErrorText(code) : "";
+  });
   const [methods, setMethods] = useState<AuthMethod[]>([]);
   const [canRegister, setCanRegister] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -242,9 +246,10 @@ export function LoginPage() {
         </AuthItem>
       </AuthForm>
 
-      {otherMethods.length > 0 ? (
+      {otherMethods.length > 0 || (site?.oauth_providers?.length ?? 0) > 0 ? (
         <AuthItem className="mt-4 space-y-2">
           <OrDivider />
+          <OAuthButtons next={next} disabled={pending} />
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={mode}

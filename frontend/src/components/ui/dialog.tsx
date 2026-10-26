@@ -50,13 +50,14 @@ export function Dialog({
         onClick={onClose}
         aria-hidden
       />
+      {/* flex-col + max-h：头部与底部固定 */}
       <div
         className={cn(
-          "relative z-10 w-full max-w-md rounded-xl border border-border bg-background shadow-xl",
+          "relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col rounded-xl border border-border bg-background shadow-xl",
           className,
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 py-4">
           <div className="min-w-0">
             <h2 className="text-base font-semibold">{title}</h2>
             {description ? (
@@ -74,9 +75,13 @@ export function Dialog({
             <X className="size-4" />
           </button>
         </div>
-        {children ? <div className="px-6 py-4">{children}</div> : null}
+        {children ? (
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+            {children}
+          </div>
+        ) : null}
         {footer ? (
-          <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+          <div className="flex shrink-0 justify-end gap-2 border-t border-border px-6 py-4">
             {footer}
           </div>
         ) : null}

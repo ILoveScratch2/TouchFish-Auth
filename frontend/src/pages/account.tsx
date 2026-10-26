@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Link2, Loader2, Unlink } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
@@ -12,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Dialog } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,9 +21,21 @@ import {
   listContainerVariants,
   listItemVariants,
 } from "@/components/ui/motion";
-import { ApiError, api } from "@/lib/api";
+import { ApiError, api, type OAuthAccountProvider } from "@/lib/api";
 import { formatTime } from "@/lib/format";
 import { useSession } from "@/lib/session";
+import { cn } from "@/lib/utils";
+
+
+const OAUTH_ERROR_TEXT: Record<string, string> = {
+  access_denied: "你在第三方页面取消了授权",
+  state_invalid: "授权已过期或被篡改，请重试",
+  provider_unavailable: "该登录方式未启用或配置不完整，请联系管理员",
+  bind_session_mismatch: "登录状态已变化，请重新登录后再绑定",
+  provider_already_bound: "该第三方账号已绑定到另一个平台账号",
+  provider_in_use: "本账号已绑定另一个同类第三方账号，请先解绑",
+  bind_requires_login: "请先登录再绑定",
+};
 
 export function AccountPage() {
   const { user, refresh } = useSession();
@@ -30,6 +44,41 @@ export function AccountPage() {
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  const [params] = useSearchParams();
+  const [providers, setProviders] = useState<OAuthAccountProvider[]>([]);
+  const [hasPassword, setHasPassword] = useState(true);
+  const [loadingProviders, setLoadingProviders] = useState(true);
+  const [unlinking, setUnlinking] = useState("");
+  const [unlinkTarget, setUnlinkTarget] = useState<OAuthAccountProvider | null>(
+    null,
+  );
+  const [oauthNotice, setOauthNotice] = useState("");
+  const [oauthError, setOauthError] = useState("");
+
+  const loadProviders = useCallback(async () => {
+    try {
+      const result = await api.oauthAccounts();
+      setProviders(result.providers);
+      setHasPassword(result.has_password);
+    } catch {
+      setProviders([]);
+    } finally {
+      setLoadingProviders(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProviders();
+  }, [loadProviders]);
+
+  // ?oauth=linked 或 ?oauth_error=xxx
+  useEffect(() => {
+    const done = params.get("oauth");
+    const failure = params.get("oauth_error");
+    if (done === "linked") setOauthNotice("已绑定");
+    if (failure) setOauthError(OAUTH_ERROR_TEXT[failure] ?? "绑定失败，请重试");
+  }, [params]);
 
   if (!user) return null;
 
@@ -51,6 +100,29 @@ export function AccountPage() {
       setError(err instanceof ApiError ? err.message : "更新失败，请稍后重试");
     } finally {
       setPending(false);
+    }
+  }
+
+  function startBind(providerId: string) {
+    window.location.href = `/api/auth/oauth/${providerId}/start?bind=1`;
+  }
+
+  async function doUnlink() {
+    if (!unlinkTarget) return;
+    setUnlinking(unlinkTarget.id);
+    setOauthError("");
+    setOauthNotice("");
+    try {
+      await api.oauthUnlink(unlinkTarget.id);
+      setOauthNotice(`已解绑 ${unlinkTarget.name}`);
+      await loadProviders();
+    } catch (err) {
+      setOauthError(
+        err instanceof ApiError ? err.message : "解绑失败，请稍后重试",
+      );
+    } finally {
+      setUnlinkTarget(null);
+      setUnlinking("");
     }
   }
 
@@ -145,7 +217,117 @@ export function AccountPage() {
             </CardContent>
           </Card>
         </motion.div>
+
+        <motion.div
+          variants={listItemVariants}
+          className={cn(
+            "lg:col-span-2",
+            // 未启用任何第三方平台时整块不显示
+            !loadingProviders && providers.length === 0 && "hidden",
+          )}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>已关联的登录方式</CardTitle>
+              <CardDescription>
+                绑定第三方账号后可直接用它登录；解绑不影响已登录的会话
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {oauthNotice ? (
+                <Alert variant="success">{oauthNotice}</Alert>
+              ) : null}
+              {oauthError ? (
+                <Alert variant="destructive">{oauthError}</Alert>
+              ) : null}
+
+              {loadingProviders ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  正在读取…
+                </div>
+              ) : providers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  管理员尚未启用任何第三方登录方式
+                </p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {providers.map((provider) => (
+                    <div
+                      key={provider.id}
+                      className="flex items-center justify-between gap-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          {provider.name}
+                          {provider.orphan ? (
+                            <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                              已停用
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {provider.linked
+                            ? `已绑定 ${provider.login ?? provider.id}`
+                            : "未绑定"}
+                        </p>
+                      </div>
+                      {provider.linked ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={unlinking === provider.id}
+                          onClick={() => setUnlinkTarget(provider)}
+                        >
+                          <Unlink />
+                          解绑
+                        </Button>
+                      ) : provider.orphan ? null : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startBind(provider.id)}
+                        >
+                          <Link2 />
+                          绑定
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!hasPassword &&
+              providers.filter((item) => item.linked).length <= 1 ? (
+                <FieldDescription>
+                  当前账号没有平台密码：唯一的登录方式不能解绑，请先在上方设置密码
+                </FieldDescription>
+              ) : null}
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
+
+      <Dialog
+        open={unlinkTarget !== null}
+        onClose={() => setUnlinkTarget(null)}
+        title={`解绑 ${unlinkTarget?.name ?? ""}`}
+        description="解绑后将无法再用该账号登录本平台，已登录的会话不受影响。"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setUnlinkTarget(null)}>
+              取消
+            </Button>
+            <Button
+              variant="primary"
+              onClick={doUnlink}
+              disabled={Boolean(unlinking)}
+            >
+              {unlinking ? "解绑中…" : "确认解绑"}
+            </Button>
+          </>
+        }
+      />
     </PageWrapper>
   );
 }
