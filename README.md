@@ -3,8 +3,10 @@
 *外部登录平台。为 TouchFish V5 签发外部 JWT（RS256 + JWKS）*
 
 
-- 后端：Python 3.11+ / FastAPI / SQLite
-- 前端：React 19 + TypeScript + Tailwind 3.4 + Radix
+- 后端：Python 3.11+ / FastAPI / SQLite  
+   - 可参考[backend/README.md](backend/README.md)
+- 前端：React 19 + TypeScript + Tailwind 3.4 + Radix UI  
+  - 可参考[frontend/README.md](frontend/README.md)
 
 
 ## 开始
