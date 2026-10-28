@@ -145,7 +145,9 @@ def public_config(db: Db, settings: Settings) -> dict[str, Any]:
         "oauth_providers": oauth.public(db, settings),
         # 第三方应用策略：普通用户也要能看到"能不能自己建、能建几个"
         "oauth_apps": {
-            "implemented": False,
+            # 自助创建已实现（/api/developer/apps）。保留该字段是为了让旧前端
+            # 能分辨"策略关闭"与"功能不存在"这两种情况。
+            "implemented": True,
             "self_service": bool(values["oauth_apps_self_service"]),
             "max_per_user": int(values["oauth_apps_max_per_user"]),
         },

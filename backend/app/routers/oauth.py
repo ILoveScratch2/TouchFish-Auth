@@ -159,8 +159,9 @@ def _resolve_user(db, settings, profile: dict) -> str:
 
     username = users_service.unique_username(
         db, profile["login"] or f"{profile['provider']}_user")
+    verified_email = profile["email"] if profile["email_verified"] else None
     user_id, message = users_service.create(
-        db, username, None, profile["email"] or None, status="active")
+        db, username, None, verified_email, status="active")
     if user_id is None:
         raise oauth.OAuthError("create_failed", message)
     _link_account(db, user_id, profile)

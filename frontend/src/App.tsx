@@ -11,6 +11,7 @@ import { DeveloperPage } from "@/pages/developer";
 import { ForgotPasswordPage } from "@/pages/forgot-password";
 import { IntegrationPage } from "@/pages/integration";
 import { LoginPage } from "@/pages/login";
+import { OidcClientsPage } from "@/pages/admin-clients";
 import { OAuthProvidersPage } from "@/pages/oauth-providers";
 import { ProtectedLayout } from "@/pages/protected-layout";
 import { RegisterPage } from "@/pages/register";
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/settings" element={<SiteSettingsPage />} />
             <Route path="/admin/oauth" element={<OAuthProvidersPage />} />
+            <Route path="/admin/clients" element={<OidcClientsPage />} />
             <Route path="/admin/audit" element={<AuditPage />} />
             <Route path="/admin/integration" element={<IntegrationPage />} />
             {/* 开发者对所有登录用户开放 */}

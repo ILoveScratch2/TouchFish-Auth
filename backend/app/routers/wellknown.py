@@ -30,15 +30,24 @@ def openid_configuration() -> JSONResponse:
         "id_token_signing_alg_values_supported": ["RS256"],
         "subject_types_supported": ["public"],
         "response_types_supported": ["code"],
-        "grant_types_supported": ["authorization_code"],
+        "response_modes_supported": ["query"],
+        "grant_types_supported": ["authorization_code", "refresh_token"],
+        "token_endpoint_auth_methods_supported": [
+            "client_secret_basic", "client_secret_post", "none",
+        ],
+        # 公开客户端强制 PKCE
+        "code_challenge_methods_supported": ["S256"],
         "scopes_supported": ["openid", "profile", "email"],
         "claims_supported": [
             "iss", "sub", "aud", "exp", "iat", "nbf", "jti",
-            "preferred_username", "email", "tfv5_uid",
+            "preferred_username", "name", "email", "email_verified",
+            "nonce", "auth_time", "token_use", "tfv5_uid",
         ],
         "authorization_endpoint": f"{base}/authorize",
-        "ticket_endpoint": f"{base}/api/auth/ticket",
+        "token_endpoint": f"{base}/token",
         "userinfo_endpoint": f"{base}/api/userinfo",
+        # TouchFish Client ONLY
+        "ticket_endpoint": f"{base}/api/auth/ticket",
     }
     return JSONResponse(document, headers={"Cache-Control": "public, max-age=300"})
 

@@ -164,6 +164,62 @@ CREATE TABLE IF NOT EXISTS password_resets (
 );
 CREATE INDEX IF NOT EXISTS idx_resets_email ON password_resets(email_key);
 CREATE INDEX IF NOT EXISTS idx_resets_expires ON password_resets(expires_at);
+
+-- ===== 本平台作为 OAuth2 / OIDC 授权服务器，上面是反的
+
+-- 注册客户端
+CREATE TABLE IF NOT EXISTS oauth_clients (
+    id            TEXT PRIMARY KEY,
+    client_id     TEXT NOT NULL UNIQUE,
+    client_name   TEXT NOT NULL,
+    secret_hash   TEXT,
+    redirect_uris TEXT NOT NULL,             -- 换行分隔，不支持通配
+    scopes        TEXT NOT NULL DEFAULT 'openid profile email',
+    owner_id      TEXT,                       -- 自助创建者的 user_id
+    enabled       INTEGER NOT NULL DEFAULT 1,
+    created_at    REAL NOT NULL,
+    updated_at    REAL NOT NULL
+);
+
+-- 授权码 sha256
+CREATE TABLE IF NOT EXISTS oauth_codes (
+    code_hash             TEXT PRIMARY KEY,
+    client_id             TEXT NOT NULL,
+    user_id               TEXT NOT NULL,
+    redirect_uri          TEXT NOT NULL,
+    scope                 TEXT NOT NULL,
+    code_challenge        TEXT,
+    code_challenge_method TEXT,
+    nonce                 TEXT,
+    created_at            REAL NOT NULL,
+    expires_at            REAL NOT NULL,
+    consumed_at           REAL
+);
+CREATE INDEX IF NOT EXISTS idx_oauth_codes_expires ON oauth_codes(expires_at);
+
+-- 访问令牌 请注意：这不能登录 TF
+CREATE TABLE IF NOT EXISTS oauth_access_tokens (
+    token_hash TEXT PRIMARY KEY,
+    client_id  TEXT NOT NULL,
+    user_id    TEXT NOT NULL,
+    scope      TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    expires_at REAL NOT NULL,
+    revoked_at REAL
+);
+CREATE INDEX IF NOT EXISTS idx_oauth_access_user ON oauth_access_tokens(user_id);
+
+-- 刷新令牌
+CREATE TABLE IF NOT EXISTS oauth_refresh_tokens (
+    token_hash TEXT PRIMARY KEY,
+    client_id  TEXT NOT NULL,
+    user_id    TEXT NOT NULL,
+    scope      TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    expires_at REAL NOT NULL,
+    revoked_at REAL
+);
+CREATE INDEX IF NOT EXISTS idx_oauth_refresh_user ON oauth_refresh_tokens(user_id);
 """
 
 
@@ -196,6 +252,12 @@ class Db:
                 " token_auth_method TEXT NOT NULL DEFAULT 'post'"
             )
 
+        client_columns = {
+            row[1] for row in self._conn.execute("PRAGMA table_info(oauth_clients)")
+        }
+        if client_columns and "owner_id" not in client_columns:
+            self._conn.execute("ALTER TABLE oauth_clients ADD COLUMN owner_id TEXT")
+
     def query(self, sql: str, params: Sequence[Any] = ()) -> list[sqlite3.Row]:
         with self._lock:
             return list(self._conn.execute(sql, params).fetchall())
@@ -216,16 +278,14 @@ class Db:
             self._conn.commit()
 
     def prune(self) -> dict[str, int]:
-        """回收过期数据。这些表原先只增不删，长期运行会无限膨胀。
-
-        保留策略：
-          - tickets：过期即删（一次性凭据，过期后无任何用途）
-          - email_verifications：过期后保留 1 天便于排查，之后删
+        """回收过期数据
+          - tickets：过期即删
+          - email_verifications：过期后保留 1 天
           - password_resets：同 email_verifications
-          - sessions：过期后保留 7 天（供"登录设备"页展示历史）；
-            **不区分是否显式吊销** —— 自然过期而不登出的会话同样要回收，
-            否则它们会永久堆积
+          - sessions：过期后保留 7 天
           - audit_log：保留 180 天
+          - oauth_codes：过期即删
+          - oauth_access_tokens / oauth_refresh_tokens：过期后保留 7day!
         """
         now = time.time()
         day = 86400.0
@@ -240,13 +300,19 @@ class Db:
                 "DELETE FROM sessions WHERE expires_at < ?", (now - 7 * day,)),
             "audit_log": self.execute(
                 "DELETE FROM audit_log WHERE at < ?", (now - 180 * day,)),
+            "oauth_codes": self.execute(
+                "DELETE FROM oauth_codes WHERE expires_at < ?", (now - day,)),
+            "oauth_access_tokens": self.execute(
+                "DELETE FROM oauth_access_tokens WHERE expires_at < ?", (now - 7 * day,)),
+            "oauth_refresh_tokens": self.execute(
+                "DELETE FROM oauth_refresh_tokens WHERE expires_at < ?", (now - 7 * day,)),
         }
         return removed
 
     def audit(self, event: str, user_id: str | None = None,
               ip: str | None = None, user_agent: str | None = None,
               detail: str | None = None) -> None:
-        """审计。调用方负责不要把密码写进 detail。"""
+        """审计。调用方不要把密码写进 detail!"""
         import secrets as _secrets
         self.execute(
             "INSERT INTO audit_log (id, at, user_id, event, ip, user_agent, detail)"

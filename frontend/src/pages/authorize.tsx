@@ -11,10 +11,21 @@ import { ApiError, api, type Connection, type Instance } from "@/lib/api";
 import { deliverTicket, readQuery } from "@/lib/bridge";
 import { useSession } from "@/lib/session";
 import { IdentifierBlock } from "@/components/identifier-block";
+import { OidcConsent } from "@/components/oidc-consent";
 
 type Phase = "checking" | "need-bind" | "ready" | "delivering" | "done";
 
+/**
+ * 授权入口分流：
+ *  - 带 `response_type` 的是标准 OAuth2 / OIDC 请求（第三方应用来登录本平台）；
+ *  - 否则是 TFV5 客户端的票据链路（本平台给 TouchFish 发登录凭据）。
+ * 两条链路共用 `/authorize` 地址，靠参数区分，避免对外暴露两个入口。
+ */
 export function AuthorizePage() {
+  return readQuery("response_type") ? <OidcConsent /> : <Tfv5Authorize />;
+}
+
+function Tfv5Authorize() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
 

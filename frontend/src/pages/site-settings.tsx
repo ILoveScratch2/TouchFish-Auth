@@ -37,8 +37,7 @@ const CATEGORY_DESC: Record<string, string> = {
   security: "注册策略与令牌有效期",
   captcha: "启用后注册/登录需要先通过 Turnstile 或 hCaptcha",
   email: "开启后新注册账户必须先验证邮箱才能登录",
-  oauth:
-    "本站作为 OAuth Provider 的策略（功能尚未实现",
+  oauth: "本站作为 OAuth Provider 的策略（功能尚未实现",
 };
 
 const ENUM_LABEL: Record<string, string> = {

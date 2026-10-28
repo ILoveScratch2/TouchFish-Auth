@@ -34,6 +34,10 @@ def _external_token(keystore: KeyStore, settings: Settings, instance: Instance,
         "iat": now,
         "nbf": now,
         "exp": now + int(ttl if ttl is not None else settings.token_ttl),
+        # 标记用途
+        # 避免 OAuth 登录 TF
+        # OAuth 不是这么用的
+        "token_use": "tfv5",
     }
     if instance.audience:
         claims["aud"] = instance.audience

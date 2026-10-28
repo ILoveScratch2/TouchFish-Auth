@@ -79,7 +79,7 @@ export function AuditPage() {
             <Input
               value={filter}
               onChange={(event) => setFilter(event.target.value)}
-              placeholder="按事件前缀筛选，如 user."
+              placeholder="按事件前缀筛选"
               className="w-56"
             />
             <Button type="submit" variant="outline">

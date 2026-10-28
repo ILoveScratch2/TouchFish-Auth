@@ -140,7 +140,7 @@ export function IntegrationPage() {
                 ))}
                 {data.instances.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    尚未配置实例，请在「管理」页添加
+                    尚未配置实例，请在管理添加
                   </p>
                 ) : null}
               </CardContent>

@@ -13,7 +13,8 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from .db import Db
 from .deps import api_error, csrf_ok
-from .routers import admin, admin_oauth, auth, connections, oauth, tokens, wellknown
+from .routers import (admin, admin_clients, admin_oauth, auth, connections,
+                      developer, oidc, oauth, tokens, wellknown)
 from .runtime import get as get_runtime
 from .runtime import init as init_runtime
 from .security.signer import KeyStore
@@ -110,7 +111,7 @@ def health():
 
 @app.post("/api/dev/throttle/reset")
 def dev_throttle_reset():
-    """清空登录失败计数。仅 AUTH_DEV_MAIL=1 时存在，供自动化测试使用。"""
+    """清空登录失败计数。仅 AUTH_DEV_MAIL=1 时存在"""
     try:
         settings = get_runtime().settings
     except RuntimeError:
@@ -125,7 +126,7 @@ def dev_throttle_reset():
 
 @app.get("/api/dev/outbox")
 def dev_outbox():
-    """本地联调用的假收件箱。仅在 AUTH_DEV_MAIL=1 时存在，否则 404。"""
+    """假收件箱"""
     try:
         settings = get_runtime().settings
     except RuntimeError:
@@ -142,17 +143,18 @@ def dev_outbox():
 app.include_router(wellknown.router)
 app.include_router(auth.router)
 app.include_router(oauth.router)
+app.include_router(oidc.router)
 app.include_router(connections.router)
 app.include_router(tokens.router)
 app.include_router(admin.router)
 app.include_router(admin_oauth.router)
+app.include_router(admin_clients.router)
+app.include_router(developer.router)
 
 
 @app.get("/{full_path:path}")
 def spa(full_path: str):
-    """前端静态文件与 SPA 回退。
-
-    在导入期就注册，避免"启动时再挂路由"导致路由表与预期不一致。
+    """前端静态文件与 SPA 回退
     """
     if full_path.startswith(("api/", ".well-known/")):
         return JSONResponse({"error": {"code": "not_found", "message": "接口不存在"}},

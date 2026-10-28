@@ -28,6 +28,7 @@ CSRF_EXEMPT = {
     "/api/connections/tfv5-login",
     "/api/dev/throttle/reset",  # 仅 AUTH_DEV_MAIL=1
     "/api/health",
+    "/token",  # OAuth2 令牌端点：服务端到服务端
 }
 
 
@@ -36,9 +37,9 @@ def origin_allowed(request: Request) -> bool:
     """
     origin = request.headers.get("origin")
     if not origin:
-        return True  # 非浏览器发起（原生客户端 / curl / 服务端调用）
+        return True  # 非浏览器发起
     if origin == "null":
-        return False  # 沙箱 iframe、file:// 之类，一律拒绝
+        return False  # 沙箱 iframe、file://，you cannot
     try:
         origin_netloc = urlparse(origin).netloc.lower()
     except ValueError:
@@ -114,7 +115,6 @@ def client_ip(request: Request) -> str:
     """真实客户端 IP。
 
     反代场景请用 uvicorn 的 `--proxy-headers --forwarded-allow-ips=<代理地址>`
-    让 `request.client` 自己变成真实 IP
     只有在无法使用该机制时才开
     `AUTH_TRUST_PROXY=1` 兜底。
     """

@@ -7,11 +7,9 @@ const ICONS: Record<string, LucideIcon> = {
   github: Github,
 };
 
-
 function startUrl(providerId: string, next: string): string {
   return `/api/auth/oauth/${encodeURIComponent(providerId)}/start?redirect=${encodeURIComponent(next)}`;
 }
-
 
 export function OAuthButtons({
   next,

@@ -212,7 +212,7 @@ export function AdminPage() {
     <PageWrapper className="flex flex-col gap-6">
       <PageHeader
         title="管理"
-        description="用户权限、实例与签名密钥。管理员由运维命令行授予。"
+        description="用户权限、实例与签名密钥"
         actions={
           <Button
             variant="outline"
@@ -263,7 +263,7 @@ export function AdminPage() {
               <CardHeader>
                 <CardTitle>用户</CardTitle>
                 <CardDescription>
-                  停用会立刻吊销该用户的全部会话；管理员可在此授予或收回权限
+                  停用会立刻吊销该用户的全部会话
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -437,7 +437,7 @@ export function AdminPage() {
               <CardHeader>
                 <CardTitle>签名密钥</CardTitle>
                 <CardDescription>
-                  轮换后新 token 用新钥签发，旧公钥保留 7 天供对端缓存过期
+                  轮换后新 token 用新钥签发
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -540,8 +540,7 @@ export function AdminPage() {
               autoComplete="new-password"
             />
             <FieldDescription>
-              留空由系统生成随机临时密码；填写则至少 8
-              位。两种方式都会吊销该用户全部会话。
+              创建或重置密码会吊销该用户全部会话。
             </FieldDescription>
           </Field>
         )}
@@ -593,7 +592,7 @@ export function AdminPage() {
             {createResult.temporary ? (
               <div className="space-y-2">
                 <p className="text-muted-foreground">
-                  临时密码（仅显示这一次，请立即转告用户）：
+                  临时密码（仅显示一次）：
                 </p>
                 <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
                   <code className="flex-1 break-all font-mono text-sm">
@@ -615,7 +614,7 @@ export function AdminPage() {
               </div>
             ) : (
               <p className="text-muted-foreground">
-                密码由你指定，请直接告知用户。
+                密码已指定。
               </p>
             )}
           </div>
@@ -653,7 +652,7 @@ export function AdminPage() {
                 autoComplete="new-password"
               />
               <FieldDescription>
-                填写则至少 8 位；留空由系统生成，仅显示一次。
+                填写至少 8 位
               </FieldDescription>
             </Field>
             <Field>
@@ -676,7 +675,7 @@ export function AdminPage() {
                 ))}
               </div>
               <FieldDescription>
-                管理员可访问「管理」页；建号后也能在列表中调整。
+                拥有 TouchFish Auth 平台管理员权限
               </FieldDescription>
             </Field>
           </div>
@@ -724,7 +723,7 @@ function InstanceEditor({
       <CardHeader>
         <CardTitle>TouchFish 实例</CardTitle>
         <CardDescription>
-          issuer 始终等于本平台地址；改动后需要同步更新服务器侧的
+          改动后需更新服务器侧的
           jwt_external_issuers
         </CardDescription>
       </CardHeader>

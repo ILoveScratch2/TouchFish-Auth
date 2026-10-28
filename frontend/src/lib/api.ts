@@ -100,6 +100,27 @@ export type OAuthAccountProvider = {
   orphan?: boolean;
 };
 
+/** OIDC 客户端 */
+export type OidcClient = {
+  client_id: string;
+  name: string;
+  redirect_uris: string[];
+  scopes: string[];
+  is_public: boolean;
+  enabled: boolean;
+  created_at: number;
+};
+
+/** /authorize 预校验通过后的请求信息 */
+export type OidcRequestMeta = {
+  client_id: string;
+  client_name: string;
+  redirect_uri: string;
+  scope: string;
+  scopes: string[];
+  state: string | null;
+};
+
 export type AuthMethod = {
   id: string;
   kind: "password" | "tfv5" | "oauth2";
@@ -329,6 +350,104 @@ export const api = {
       registration_mode: string;
       instances: Instance[];
     }>("/api/developer/summary"),
+
+  /* 本平台作为 OIDC 授权 */
+  oidcRequest: (params: Record<string, string>) =>
+    request<OidcRequestMeta>(
+      `/api/oidc/request?${new URLSearchParams(params)}`,
+    ),
+  oidcApprove: (body: {
+    client_id: string;
+    redirect_uri: string;
+    response_type?: string;
+    scope?: string;
+    state?: string | null;
+    nonce?: string | null;
+    code_challenge?: string | null;
+    code_challenge_method?: string | null;
+    decision: "allow" | "deny";
+  }) =>
+    request<{ redirect: string }>("/api/oidc/approve", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  adminOidcClients: () =>
+    request<{ clients: OidcClient[] }>("/api/admin/oauth/clients"),
+  adminCreateOidcClient: (body: {
+    name: string;
+    redirect_uris: string[];
+    scopes: string[];
+    public: boolean;
+  }) =>
+    request<{ client: OidcClient; client_secret: string | null }>(
+      "/api/admin/oauth/clients",
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  adminUpdateOidcClient: (
+    clientId: string,
+    body: {
+      name?: string;
+      redirect_uris?: string[];
+      scopes?: string[];
+      enabled?: boolean;
+    },
+  ) =>
+    request<{ client: OidcClient }>(
+      `/api/admin/oauth/clients/${encodeURIComponent(clientId)}`,
+      { method: "PUT", body: JSON.stringify(body) },
+    ),
+  adminRotateOidcSecret: (clientId: string) =>
+    request<{ client_secret: string }>(
+      `/api/admin/oauth/clients/${encodeURIComponent(clientId)}/secret`,
+      { method: "POST" },
+    ),
+  adminDeleteOidcClient: (clientId: string) =>
+    request<{ ok: boolean }>(
+      `/api/admin/oauth/clients/${encodeURIComponent(clientId)}`,
+      { method: "DELETE" },
+    ),
+
+  developerApps: () =>
+    request<{
+      self_service: boolean;
+      max_per_user: number;
+      used: number;
+      apps: OidcClient[];
+    }>("/api/developer/apps"),
+  developerCreateApp: (body: {
+    name: string;
+    redirect_uris: string[];
+    scopes: string[];
+    public: boolean;
+  }) =>
+    request<{ app: OidcClient; client_secret: string | null }>(
+      "/api/developer/apps",
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  developerUpdateApp: (
+    clientId: string,
+    body: {
+      name?: string;
+      redirect_uris?: string[];
+      scopes?: string[];
+      enabled?: boolean;
+    },
+  ) =>
+    request<{ app: OidcClient }>(
+      `/api/developer/apps/${encodeURIComponent(clientId)}`,
+      { method: "PUT", body: JSON.stringify(body) },
+    ),
+  developerRotateSecret: (clientId: string) =>
+    request<{ client_secret: string }>(
+      `/api/developer/apps/${encodeURIComponent(clientId)}/secret`,
+      { method: "POST" },
+    ),
+  developerDeleteApp: (clientId: string) =>
+    request<{ ok: boolean }>(
+      `/api/developer/apps/${encodeURIComponent(clientId)}`,
+      { method: "DELETE" },
+    ),
 
   adminOverview: () =>
     request<{

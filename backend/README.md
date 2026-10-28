@@ -57,3 +57,8 @@ python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"
 | `last_login_method` | 没有密码且只有一条第三方绑定 |
 | `register_disabled` | `registration_mode=force_off` |
 | `mail_failed` | 未配 SMTP，调试可设置 `AUTH_DEV_MAIL=1`，查看本地邮件可通过 `/api/dev/outbox` |
+| `invalid_redirect_uri` | OIDC 应用的回调地址与注册值不一致（逐字符比对，不支持通配） |
+| `invalid_grant` | 授权码 / 刷新令牌无效、过期、已使用，或 PKCE 校验失败 |
+| `invalid_client` | `/token` 的 client_id 未知 / 已停用，或 secret 不正确 |
+| `self_service_disabled` | 站点未开放自助创建应用（`oauth_apps_self_service`） |
+| `quota_exceeded` | 已达到本账号可创建的应用数量上限 |

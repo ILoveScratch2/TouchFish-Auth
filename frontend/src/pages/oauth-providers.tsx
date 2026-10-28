@@ -204,8 +204,7 @@ export function OAuthProvidersPage() {
       await navigator.clipboard.writeText(value);
       setCopiedKey(item.id);
       window.setTimeout(() => setCopiedKey(""), 1500);
-    } catch {
-    }
+    } catch {}
   }
 
   return (
