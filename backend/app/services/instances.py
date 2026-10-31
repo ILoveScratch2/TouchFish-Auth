@@ -73,7 +73,7 @@ def get_instance(db: Db, instance_id: str | None) -> Instance | None:
 
 
 def resolve_target(db: Db, target: str | None) -> Instance | None:
-    """按客户端传来的 TFV5 地址找实例；找不到就回退默认。"""
+    """按客户端传来的 TFV5 地址找实例"""
     if target:
         wanted = _normalize(target)
         for instance in list_instances(db):
@@ -94,7 +94,7 @@ def detail(db: Db, instance: Instance) -> dict:
 
 def upsert(db: Db, settings, *, instance_id: str, base_url: str,
            display_name: str, audience: str | None) -> Instance:
-    """新增或更新实例。issuer 始终跟随平台自身的 issuer。"""
+    """新增或更新实例。issuer 始终跟随平台自身的 issuer"""
     base = base_url.strip().rstrip("/")
     if not (base.startswith("http://") or base.startswith("https://")):
         raise ValueError("base_url 必须是 http(s)")
@@ -121,7 +121,7 @@ def upsert(db: Db, settings, *, instance_id: str, base_url: str,
 
 
 def delete(db: Db, instance_id: str) -> tuple[bool, str]:
-    """删除实例。已被绑定使用的实例不允许删除，避免留下悬空连接。"""
+    """删除实例"""
     used = db.query_one("SELECT COUNT(*) AS n FROM connections WHERE instance_id = ?",
                         (instance_id,))
     if used and int(used["n"]) > 0:

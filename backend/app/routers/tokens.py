@@ -1,4 +1,4 @@
-"""代授权：一次性 ticket → 短时 external_token。"""
+"""代授权"""
 from __future__ import annotations
 
 import secrets
@@ -31,8 +31,7 @@ class TicketBody(BaseModel):
 
 @router.post("/api/authorize/complete")
 def complete(body: CompleteBody, request: Request):
-    """把已登录的浏览器会话换成一次性 ticket
-    """
+    """把已登录的浏览器会话换成一次性 ticket"""
     runtime = get_runtime()
     user = current_user(request)
     if user is None:
@@ -67,7 +66,7 @@ def complete(body: CompleteBody, request: Request):
 
 @router.post("/api/auth/ticket")
 def exchange(body: TicketBody, request: Request):
-    """原生客户端调用：一次性 ticket 换 external_token（不依赖浏览器 cookie）。"""
+    """原生客户端调用：一次性 ticket -> external_token"""
     runtime = get_runtime()
 
     row = runtime.db.query_one("SELECT * FROM tickets WHERE ticket = ?", (body.ticket,))

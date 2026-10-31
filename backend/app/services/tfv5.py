@@ -1,10 +1,4 @@
-"""TFV5_server 客户端。
-
-关键约束（全部来自对 TFV5 源码的核对）：
-- 业务 POST 必须走 RSA-OAEP + AES-256-CBC 信封
-- 失败响应（含 401）也是密文，必须先解密再判错
-- uid 是整数，按用户名登录要先查 /auth/username/<name>
-- 限流键是 (客户端 IP, path)，默认 60/60s，平台出口 IP 
+"""TFV5 客户端 
 """
 from __future__ import annotations
 
@@ -25,10 +19,7 @@ from ..security.envelope import (
 PUB_KEY_TTL = 3600.0
 STATUS_TIMEOUT = 5.0
 CALL_TIMEOUT = 10.0
-# 本地节流：每分钟最多 120 次登录/绑定。
-# 对端 /auth/platform/bind 的配额是 300/min、status 是 600/min，这里留出余量。
-# 注意：TFV5 密码登录现在每次都要调一次 platform_bind 验密码，
-# 所以这个值不能再按"只有显式绑定才用"的旧假设设成 30。
+# 本地节流：每分钟最多 120 次登录/绑定
 LOCAL_LIMIT_PER_MINUTE = 120
 
 
@@ -77,12 +68,10 @@ class Tfv5Client:
         self._allow_insecure_http = allow_insecure_http
         self._pub_cache: dict[str, tuple[str, float]] = {}
         self._lock = threading.Lock()
-        # trust_env=False：不读 HTTP(S)_PROXY。否则在设了系统代理的机器上，
-        # 连 127.0.0.1 的 TFV5 也会被代理接管，变成 502。
+        # trust_env=False：不读 HTTP(S)_PROXY
         self._client = httpx.Client(timeout=CALL_TIMEOUT, follow_redirects=False,
                                     trust_env=False)
 
-    # ---------- 基础 ----------
 
     def _check_url(self, base_url: str, allow_insecure: bool | None = None) -> str:
         allow_insecure = self._allow_insecure_http if allow_insecure is None else allow_insecure

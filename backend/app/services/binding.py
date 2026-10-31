@@ -1,11 +1,3 @@
-"""绑定编排：平台账户 ↔ TFV5 账户。
-
-两条链路：
-  platform —— 调 TFV5 的 /auth/platform/bind，只校验 + 写映射，不建会话，
-              首选，不会污染用户的设备/会话列表。
-  legacy   —— 旧版 TFV5 没有专用端点时，走 login + external/bind，
-              会建一个 TFV5 会话，因此把 refresh token 加密存下来
-"""
 from __future__ import annotations
 
 import time
@@ -80,14 +72,11 @@ def list_connections(db: Db, user_id: str) -> list[dict]:
 def bind(db: Db, settings: Settings, user_id: str, instance: Instance,
          identifier: str, password: str, *, assume_platform: bool = False,
          login_reuse: bool = False) -> dict:
-    """建立绑定。identifier 可以是用户名或数字 uid。
+    """
+    建立绑定
+    identifier 可以是用户名或数字 uid。
 
-    `assume_platform=True` 时跳过"端点是否可用"的探测，直接走专用端点。
-    调用方已经探测过（例如登录路径在入口就查过 status）时用它，
-    否则每次登录都会多打一次 status，把对端的按路径配额吃满。
-
-    `login_reuse=True` 表示这次调用是"登录时复用已有绑定"，只刷新
-    `last_login_at`，不动 `bound_at`（前端的"绑定时间"才不会被登录时间覆盖）。
+    `assume_platform=True` 时跳过端点的探测
     """
     client = get_client()
     iss = settings.issuer
@@ -147,8 +136,6 @@ def bind(db: Db, settings: Settings, user_id: str, instance: Instance,
 
 
 def _map_error(code: str) -> BindError:
-    # TFV5 在 detail_error=true 时会把内部错误键规范化成大写对外码
-    # （error_codes.normalize_error），所以两种写法都要认。
     mapping = {
         "auth_failed": ("tfv5_bad_credentials", "TouchFish 账号或密码不正确"),
         "AUTH_FAILED": ("tfv5_bad_credentials", "TouchFish 账号或密码不正确"),
@@ -168,10 +155,8 @@ def _map_error(code: str) -> BindError:
 
 def _ensure_uid_free(db: Db, instance_id: str, uid: int,
                      ignore_connection_id: str | None = None) -> None:
-    """同一个 TFV5 账号在一个实例上只能绑到一个平台账户。
-
-    换绑（UPDATE）和新绑（INSERT）都必须过这一关，否则会直接撞
-    UNIQUE(instance_id, tfv5_uid) 抛 IntegrityError，变成 500。
+    """
+    同一个 TFV5 账号在一个实例上只能绑到一个平台账户
     """
     sql = "SELECT user_id FROM connections WHERE instance_id = ? AND tfv5_uid = ?"
     params: list = [instance_id, uid]
@@ -204,7 +189,7 @@ def _upsert_connection(db: Db, user_id: str, instance: Instance, uid: int,
                 )
             else:
                 # 登录复用已有绑定：bound_at 应保持首次绑定时间，
-                # 只更新 last_login_at，否则前端的"绑定时间"会随每次登录漂移。
+                # 只更新 last_login_at
                 db.execute(
                     "UPDATE connections SET tfv5_uid = ?, tfv5_username = ?, iss = ?,"
                     " sub = ?, refresh_token_enc = ?, bind_channel = ?,"
@@ -212,7 +197,7 @@ def _upsert_connection(db: Db, user_id: str, instance: Instance, uid: int,
                     (uid, username, instance.issuer, user_id, sealed, channel,
                      now, existing["id"]),
                 )
-        except Exception as exc:  # noqa: BLE001 - 并发下的唯一约束
+        except Exception as exc:  # noqa: BLE001
             raise BindError(
                 "tfv5_uid_taken",
                 "该 TouchFish 账号已绑定到另一个平台账户，请先在那边解除绑定",
@@ -229,7 +214,7 @@ def _upsert_connection(db: Db, user_id: str, instance: Instance, uid: int,
             (secrets.token_hex(12), user_id, instance.id, uid, username,
              instance.issuer, user_id, sealed, channel, now, now),
         )
-    except Exception as exc:  # noqa: BLE001 - 并发下的唯一约束
+    except Exception as exc:  # noqa: BLE001
         raise BindError(
             "tfv5_uid_taken",
             "该 TouchFish 账号已绑定到另一个平台账户，请先在那边解除绑定",
@@ -237,7 +222,7 @@ def _upsert_connection(db: Db, user_id: str, instance: Instance, uid: int,
 
 
 def unbind(db: Db, settings: Settings, user_id: str, instance: Instance) -> None:
-    """解除绑定。优先用专用端点；否则用缓存的 refresh token 换会话再解绑。"""
+    """解除绑定"""
     client = get_client()
     conn = get_connection(db, user_id, instance.id)
     if conn is None:
@@ -276,7 +261,7 @@ def unbind(db: Db, settings: Settings, user_id: str, instance: Instance) -> None
     db.execute("DELETE FROM connections WHERE id = ?", (conn["id"],))
 
 
-# KeyStore 在 main 启动时注入，避免循环依赖
+# KeyStore 在 main 启动时注入
 _keystore: KeyStore | None = None
 
 

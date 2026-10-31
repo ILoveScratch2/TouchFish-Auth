@@ -75,10 +75,10 @@ def verify_detail(
         payload["remoteip"] = remote_ip
 
     try:
-        # 出站到公网，按环境代理走（与 TFV5 的本地直连相反）
+        # 出站到公网
         with httpx.Client(trust_env=True, timeout=timeout) as client:
             response = client.post(url, data=payload)
-    except Exception as exc:  # noqa: BLE001 - 网络异常要能说清是网络问题
+    except Exception as exc:  # noqa: BLE001
         return CaptchaResult(
             ok=False,
             reachable=False,

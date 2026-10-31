@@ -1,7 +1,4 @@
-"""运行时配置。
-
-按需求「生产地址部署时确定」，这里不提供任何可用作生产的默认 issuer：
-缺 AUTH_BASE_URL 直接抛错并给出明确提示。
+"""运行时配置
 """
 from __future__ import annotations
 

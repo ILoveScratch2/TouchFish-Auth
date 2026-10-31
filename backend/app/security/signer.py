@@ -1,7 +1,5 @@
-"""RS256 密钥环、JWKS 与 token 签发。
-
-kid 用 RFC 7638 JWK thumbprint，与 TFV5 的 jwt_keys.py 同算法，
-方便两边人工核对 key 指纹。
+"""
+RS256 密钥环、JWKS 与 token 签发
 """
 from __future__ import annotations
 
@@ -22,7 +20,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 ALGORITHM = "RS256"
 KEY_BITS = 3072
-RETENTION_SECONDS = 7 * 24 * 3600  # 旧公钥保留 7 天，远大于 TFV5 的 600s 缓存 + 86400s stale
+RETENTION_SECONDS = 7 * 24 * 3600  # 旧公钥保留 7 天
 
 
 def b64url(data: bytes) -> str:
@@ -58,7 +56,7 @@ class KeyStore:
         self._keys: list[KeyEntry] = []
         self._load()
 
-    # ---------- 持久化 ----------
+    # 持久化 
 
     def _load(self) -> None:
         with self._lock:
@@ -72,9 +70,7 @@ class KeyStore:
             root = self._dir.resolve()
             for item in (raw or {}).get("keys", []):
                 try:
-                    # index.json 里的 file 不可信：只允许落在 key 目录内的相对路径，
-                    # 否则 ../ 可以把任意文件当私钥读（虽然没有私钥会解析失败，
-                    # 但没必要给这条路）。
+                    # index.json 里的 file 不可信
                     name = item["file"]
                     if not isinstance(name, str) or not name:
                         continue
@@ -83,13 +79,12 @@ class KeyStore:
                         continue
                     pem = pem_path.read_bytes()
                     key = serialization.load_pem_private_key(pem, password=None)
-                except Exception:  # noqa: BLE001 - 索引坏了就从磁盘重建
+                except Exception:  # noqa: BLE001
                     continue
                 if not isinstance(key, rsa.RSAPrivateKey):
                     continue
                 nums = key.public_key().public_numbers()
-                # kid 一律由密钥本身推导，不采信索引里的值：
-                # 索引被改也无法让某个 kid 指向不匹配的公钥。
+                # kid 推导
                 entries.append(KeyEntry(
                     kid=_thumbprint(nums.n, nums.e),
                     private_pem=pem,
@@ -132,14 +127,13 @@ class KeyStore:
         try:
             os.chmod(pem_path, 0o600)
         except OSError:
-            pass  # Windows 上 chmod 语义有限，不阻塞
+            pass  # Windows 上不管
         entry = KeyEntry(kid=kid, private_pem=pem, public_numbers=(nums.n, nums.e),
                          created_at=time.time(), retired_at=None)
         self._keys.append(entry)
         self._save_index()
         return entry
 
-    # ---------- 查询 ----------
 
     def _active(self) -> KeyEntry:
         with self._lock:
@@ -152,10 +146,11 @@ class KeyStore:
         return self._active().kid
 
     def public_entries(self) -> list[KeyEntry]:
-        """发布用：活跃的 + 仍在保留期内的，**活跃钥排在最前**。
+        """
+        发布用
+        活跃的 + 仍在保留期内的
 
-        顺序有意义：有些消费方会偷懒取 keys[0]。虽然按 kid 选择才是正确做法，
-        但没有理由让它们因为轮换而验签失败。
+        神秘设计有些 CCF dzd 会偷懒取 keys[0]。虽然按 kid 选择才是正确做法
         """
         now = time.time()
         with self._lock:
@@ -181,7 +176,7 @@ class KeyStore:
         return {"keys": keys}
 
     def fingerprint(self, kid: str | None = None) -> str:
-        """给开发者页展示的短指纹（kid 本身已是 thumbprint，这里只做分组）。"""
+        """给开发者页展示的短指纹（kid 本身已是 thumbprint"""
         target = kid or self.active_kid()
         return " ".join(target[i:i + 4] for i in range(0, len(target), 4)).upper()
 
@@ -194,7 +189,6 @@ class KeyStore:
             self._save_index()
             return entry
 
-    # ---------- 签发 ----------
 
     def sign(self, claims: dict[str, Any], kid: str | None = None) -> str:
         entry = self._active()
@@ -214,7 +208,7 @@ class KeyStore:
 
 
 def _thumbprint(n: int, e: int) -> str:
-    """RFC 7638：对按字典序排列的必需成员做 SHA-256。"""
+    """RFC 7638：对按字典序排列的必需成员做 SHA-256"""
     canonical = json.dumps(
         {"e": _int_to_b64(e), "kty": "RSA", "n": _int_to_b64(n)},
         separators=(",", ":"),

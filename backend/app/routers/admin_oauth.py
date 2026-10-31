@@ -16,14 +16,13 @@ class ProviderBody(BaseModel):
     provider_key: str | None = Field(default=None, max_length=32)
     display_name: str | None = Field(default=None, max_length=48)
     client_id: str | None = Field(default=None, max_length=200)
-    # 留空 = 不修改（与站点设置里 secret 的语义一致）
+    # 留空 = 不修改
     client_secret: str | None = Field(default=None, max_length=256)
     authorize_url: str | None = Field(default=None, max_length=256)
     token_url: str | None = Field(default=None, max_length=256)
     userinfo_url: str | None = Field(default=None, max_length=256)
     emails_url: str | None = Field(default=None, max_length=256)
     scope: str | None = Field(default=None, max_length=200)
-    # 令牌端点用 client_secret_post（默认）还是 client_secret_basic
     token_auth_method: str | None = Field(default=None, max_length=8)
     uid_field: str | None = Field(default=None, max_length=48)
     username_field: str | None = Field(default=None, max_length=48)
@@ -34,7 +33,7 @@ class ProviderBody(BaseModel):
 
 @router.get("/api/admin/oauth/templates")
 def templates(request: Request):
-    """新建时的预填模板（只读；运行期一律以表为准）。"""
+    """新建时的预填模板"""
     _, error = _require_admin(request)
     if error:
         return error
@@ -53,7 +52,6 @@ def list_providers(request: Request):
         return error
     return JSONResponse({
         "providers": oauth.admin_view(runtime.db, runtime.settings),
-        # 前端据此提示管理员：回调地址由 AUTH_BASE_URL 决定
         "callback_base": f"{runtime.settings.base_url}/api/auth/oauth",
     })
 

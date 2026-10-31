@@ -1,13 +1,7 @@
-"""TFV5 的 RSA+AES 信封，以及平台自用的 AES-GCM 密封。
+"""
+TFV5 RSA+AES 加密
 
-信封格式与 TFV5_server/crypto.py 逐字节对齐：
-  请求 {"key": b64(RSA-OAEP(aes_key)), "iv": b64(iv), "content": b64(ct)}
-  RSA   OAEP(mgf=MGF1(SHA256), algorithm=SHA256, label=None)
-  对称  AES-256-CBC + PKCS7(128)，key 32B，iv 16B
-  响应  {"iv": b64, "content": b64}，用同一个 aes_key 解密
-
-注意：TFV5 的失败响应（含 HTTP 401）同样是加密信封，调用方必须
-先解密再判错，不能因为状态码非 200 就放弃。
+注意：TFV5 的失败响应（含 HTTP 401）同样加密
 """
 from __future__ import annotations
 
@@ -109,7 +103,7 @@ def open_envelope(aes_key: bytes, response: Any) -> dict[str, Any]:
     return parsed if isinstance(parsed, dict) else {"raw": parsed}
 
 
-# ---------- 平台自用：加密缓存的 TFV5 refresh token ----------
+# 平台自用加密缓存的 TFV5 refresh token 
 
 def seal(master_key: bytes, plaintext: str) -> bytes:
     nonce = os.urandom(12)

@@ -1,9 +1,5 @@
-"""开发者自助：让普通用户创建自己的 OIDC 客户端。
-
-与管理端 `/api/admin/oauth/clients` 的区别只有两处：
-  - 只能看/改自己创建的（`owner_id` 归属校验）；
-  - 受站点策略 `oauth_apps_self_service` 与 `oauth_apps_max_per_user` 约束。
-配额只统计自助创建的应用，管理员创建的不占用户额度。
+"""
+用户 OAuth
 """
 from __future__ import annotations
 
@@ -39,7 +35,7 @@ def _policy(runtime) -> tuple[bool, int]:
 
 
 def _owned(runtime, client_id: str, user_id: str):
-    """取自己的客户端；不存在或属于别人都返回 None（不泄露是否存在）。"""
+    """取自己的客户端；不存在或属于别人都返回 None（不泄露是否存在）"""
     row = oidc.find_client(runtime.db, client_id)
     if row is None or row["owner_id"] != user_id:
         return None

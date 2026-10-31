@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-// soft 底 + border 描边 + foreground 文字。
+// soft 底 + border 描边 + foreground 文字
 const alertVariants = cva("rounded-lg border p-4 text-sm", {
   variants: {
     variant: {

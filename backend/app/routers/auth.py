@@ -1,4 +1,3 @@
-"""平台账户、会话与站点公开配置。"""
 from __future__ import annotations
 
 import time
@@ -223,7 +222,7 @@ def resend_verification(body: ResendBody, request: Request):
 
 @router.post("/api/auth/forgot-password")
 def forgot_password(body: ForgotBody, request: Request):
-    """发送密码重置验证码。
+    """发送密码重置验证码
 
     账号不存在、未绑定邮箱、处于冷却期 202（偷偷告诉你这其实和我家地址有关）
     """

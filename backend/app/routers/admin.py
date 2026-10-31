@@ -1,6 +1,6 @@
 """管理员接口。
 
-users.role = 'admin'，用 CLI 授予：
+users.role = 'admin'，用 CLI 发管理员（当然你直接发也行）：
 
 python -m app.cli promote <username>
 """
@@ -54,7 +54,7 @@ class CreateUserBody(BaseModel):
 
 
 def _random_password() -> str:
-    """去掉 0/O/1/I/l 等易混字符，便于管理员人工转述。"""
+    """去掉 0/O/1/I/l 等易混字符"""
     alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"
     return "".join(secrets.choice(alphabet) for _ in range(16))
 
@@ -185,7 +185,7 @@ def user_connections(user_id: str, request: Request):
     return JSONResponse({"connections": list_connections(runtime.db, user_id)})
 
 
-# ---------- 站点配置 ----------
+# 站点配置 
 
 class SettingsBody(BaseModel):
     values: dict
@@ -212,13 +212,12 @@ def put_settings(body: SettingsBody, request: Request):
         return api_error(400, "invalid_setting", exc.message)
     runtime.db.audit(
         "admin.settings", admin["user_id"], client_ip(request), user_agent(request),
-        # 只记键名，不记值 —— 值里可能有 SMTP 密码
+        # 只记键名
         detail=",".join(sorted(body.values.keys())),
     )
     return JSONResponse(site.admin_view(runtime.db, runtime.settings))
 
 
-# ---------- 审计日志 ----------
 
 @router.get("/api/admin/audit")
 def audit_log(request: Request, limit: int = 100, event: str = ""):
@@ -250,7 +249,6 @@ def audit_log(request: Request, limit: int = 100, event: str = ""):
     ]})
 
 
-# ---------- 实例删除 / 强制下线 ----------
 
 @router.delete("/api/admin/instances/{instance_id}")
 def delete_instance(instance_id: str, request: Request):
@@ -284,11 +282,11 @@ def logout_all(user_id: str, request: Request):
     return JSONResponse({"ok": True, "revoked": count})
 
 
-# ---------- 人机验证自检 ----------
 
 @router.post("/api/admin/users")
 def create_user(body: CreateUserBody, request: Request):
-    """管理员直接建号
+    """
+    管理员直接创建用户账户
     """
     admin, error = _require_admin(request)
     if error:
@@ -325,7 +323,8 @@ def create_user(body: CreateUserBody, request: Request):
 
 @router.post("/api/admin/users/{user_id}/reset-password")
 def reset_user_password(user_id: str, body: ResetPasswordBody, request: Request):
-    """管理员重置用户密码
+    """
+    管理员重置用户密码
     """
     admin, error = _require_admin(request)
     if error:
@@ -354,7 +353,8 @@ def reset_user_password(user_id: str, body: ResetPasswordBody, request: Request)
 
 @router.post("/api/admin/captcha/test")
 def captcha_test(request: Request):
-    """用当前配置向 siteverify 发一次探测，把 error-codes 原样返回
+    """
+    用当前配置向 siteverify 探测
     """
     admin, error = _require_admin(request)
     if error:

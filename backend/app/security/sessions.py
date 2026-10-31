@@ -1,7 +1,7 @@
-"""平台浏览器会话与 CSRF。
+"""
+平台浏览器会话与 CSRF
 
-不用 JWT 做平台会话：opaque id + 库中 sha256，
-撤销即时生效，也避免"自签 JWT 被 TFV5 当外部 token 误验"。
+不使用 JWT 因为支持即时撤销
 """
 from __future__ import annotations
 

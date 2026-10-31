@@ -1,4 +1,4 @@
-"""TFV5 账户绑定。"""
+"""TFV5 账户绑定"""
 from __future__ import annotations
 
 import secrets
@@ -78,7 +78,7 @@ def bind(body: BindBody, request: Request):
 
 @router.post("/api/connections/tfv5-login")
 def tfv5_login(body: BindBody, request: Request):
-    """未登录状态下直接用 TFV5 凭据登录：已绑定则登录，未绑定则按策略决定是否开通。"""
+    """未登录状态下直接用 TFV5 凭据登录"""
     runtime = get_runtime()
     instance = instances_repo.get_instance(runtime.db, body.instance_id)
     if instance is None:
@@ -97,7 +97,7 @@ def tfv5_login(body: BindBody, request: Request):
 
     client = get_client()
     probe = client.status(instance, runtime.settings.issuer, "probe")
-    # 用真正的 sub 探测?useless（会返回 linked:false），这里只判断端点是否存在
+    # 用真正的 sub 探测? useless（会返回 linked:false）
     endpoint_available = probe is not None
 
     ip = client_ip(request)
@@ -110,13 +110,11 @@ def tfv5_login(body: BindBody, request: Request):
     if not endpoint_available:
         return _tfv5_login_legacy(runtime, request, instance, body, values, ip)
 
-    # 专用端点可用：先按 (instance, tfv5_uid) 找已有连接
+    # 专用端点可用
     existing = _find_connection_by_tfv5(runtime.db, instance.id, body.identifier, client, instance)
     if existing is not None:
         conn, tfv5_uid = existing
-        # 已绑定分支同样要验密码。
-        # 用 platform_bind 做验密入口是安全的：它先 verify_user 再判断映射，
-        # 当 (iss, sub) 已指向同一个 uid 时幂等返回 success，且不建会话、不发 token
+        # 已绑定分支同样要验密码
         try:
             # 入口已经探过 status
             binding_service.bind(runtime.db, runtime.settings, conn["user_id"],
@@ -156,7 +154,6 @@ def tfv5_login(body: BindBody, request: Request):
     username = users_service.unique_username(runtime.db, str(result.get("tfv5_username") or "tf_user"))
     error = users_service.create_with_id(runtime.db, new_id, username)
     if error:
-        # 回滚绑定，避免留下孤儿映射
         try:
             binding_service.unbind(runtime.db, runtime.settings, new_id, instance)
         except Exception:  # noqa: BLE001
@@ -200,7 +197,8 @@ def _login_existing(runtime, request: Request, user_id: str, tfv5_uid: int) -> J
 
 def _tfv5_login_legacy(runtime, request: Request, instance, body: BindBody,
                        values: dict, ip: str) -> JSONResponse:
-    """旧版 TFV5：没有专用端点，只能先 login 拿 uid 再判断是否已绑定
+    """
+    旧版 TFV5：没有专用端点
     """
     client = get_client()
     try:

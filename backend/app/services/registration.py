@@ -1,5 +1,3 @@
-"""注册策略。
-"""
 from __future__ import annotations
 
 from ..db import Db
@@ -30,8 +28,8 @@ def registration_allowed(db: Db, settings: Settings,
         return False, "暂时无法确认服务器的注册策略，请稍后再试"
 
     if "allow_register" not in info:
-        # 旧版 TFV5 没有该字段，等同于"注册开放"
+        # 旧版 TFV5 没有该字段
         return True, ""
     allowed = bool(info.get("allow_register"))
-    # 原因只在被拒时返回：allowed 为 true 还带"已关闭注册"会让调用方困惑
+    # 原因只在被拒时返回
     return allowed, "" if allowed else "该 TouchFish 服务器已关闭注册"
