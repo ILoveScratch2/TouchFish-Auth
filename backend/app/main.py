@@ -67,6 +67,7 @@ def _prune_once(db: Db) -> None:
     try:
         removed = db.prune()
         pruned = throttle_service.get().prune()
+        pruned += throttle_service.token().prune()
         if any(removed.values()) or pruned:
             log.info("清理过期数据 %s，回收登录限流桶 %s 个", removed, pruned)
     except Exception:  # noqa: BLE001 - 清理失败不该阻止服务启动

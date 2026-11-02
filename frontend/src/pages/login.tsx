@@ -39,7 +39,8 @@ export function LoginPage() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaReset, setCaptchaReset] = useState(0);
 
-  const needCaptcha = Boolean(site?.captcha.enabled && site.captcha.on_login);
+  // 只看 on_login
+  const needCaptcha = Boolean(site?.captcha.on_login);
 
   const next = params.get("next") ?? "/account";
 

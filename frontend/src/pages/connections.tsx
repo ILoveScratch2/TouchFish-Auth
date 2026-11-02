@@ -21,10 +21,13 @@ import {
   listItemVariants,
 } from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/primitives";
+import { CaptchaWidget } from "@/components/captcha";
 import { ApiError, api, type Connection, type Instance } from "@/lib/api";
 import { formatTime } from "@/lib/format";
+import { useSiteConfig } from "@/lib/site";
 
 export function ConnectionsPage() {
+  const { config: site } = useSiteConfig();
   const [connections, setConnections] = useState<Connection[] | null>(null);
   const [instances, setInstances] = useState<Instance[]>([]);
   const [adding, setAdding] = useState(false);
@@ -33,6 +36,9 @@ export function ConnectionsPage() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const needCaptcha = Boolean(site?.captcha.on_login);
 
   const load = useCallback(async () => {
     const [conn, inst] = await Promise.all([
@@ -50,16 +56,27 @@ export function ConnectionsPage() {
 
   async function bind(event: React.FormEvent) {
     event.preventDefault();
+    if (needCaptcha && !captchaToken) {
+      setError("请先完成人机验证");
+      return;
+    }
     setPending(true);
     setError("");
     try {
-      await api.bind({ identifier, password });
+      await api.bind({
+        identifier,
+        password,
+        captcha_token: captchaToken ?? undefined,
+      });
       setIdentifier("");
       setPassword("");
+      setCaptchaToken(null);
       setAdding(false);
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "绑定失败，请稍后重试");
+      setCaptchaToken(null);
+      setCaptchaReset((value) => value + 1);
     } finally {
       setPending(false);
     }
@@ -202,6 +219,14 @@ export function ConnectionsPage() {
                         服务器：{instances[0]?.base_url ?? "未配置"}
                       </FieldDescription>
                     </Field>
+                    {needCaptcha && site?.captcha.provider ? (
+                      <CaptchaWidget
+                        provider={site.captcha.provider}
+                        siteKey={site.captcha.site_key}
+                        onToken={setCaptchaToken}
+                        resetSignal={captchaReset}
+                      />
+                    ) : null}
                     <div className="flex gap-2">
                       <Button
                         type="submit"

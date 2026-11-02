@@ -95,9 +95,16 @@ class Throttle:
 
 _THROTTLE = Throttle()
 
+_TOKEN = Throttle(window=900.0, free_attempts=20, base_delay=2.0, max_delay=300.0)
+
 
 def get() -> Throttle:
     return _THROTTLE
+
+
+def token() -> Throttle:
+    """OAuth2 `/token` 端点的失败"""
+    return _TOKEN
 
 
 def configure(free_attempts: int) -> None:

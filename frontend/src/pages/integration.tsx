@@ -36,7 +36,7 @@ export function IntegrationPage() {
     <PageWrapper className="flex flex-col gap-6">
       <PageHeader
         title="对接"
-        description="把这些值填进 TouchFish 服务器的 config.json 即可完成对接"
+        description="把这些值填入 TouchFish 服务器 config.json 即可完成对接（旧版本可能无法使用）"
       />
 
       {error ? <Alert variant="destructive">{error}</Alert> : null}
@@ -80,7 +80,7 @@ export function IntegrationPage() {
               <CardHeader>
                 <CardTitle>签名密钥</CardTitle>
                 <CardDescription>
-                  算法 RS256，kid 为 RFC 7638 指纹；轮换后旧公钥保留 7 天
+                  算法 RS256，kid 为 RFC 7638 指纹（轮换后旧公钥保留 7 天）
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -117,7 +117,7 @@ export function IntegrationPage() {
             <Card>
               <CardHeader>
                 <CardTitle>已配置实例</CardTitle>
-                <CardDescription>实例的增删改在「管理」页</CardDescription>
+                <CardDescription>实例的增删改在 管理 页</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {data.instances.map((item) => (

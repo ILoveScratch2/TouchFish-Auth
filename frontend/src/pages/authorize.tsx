@@ -10,16 +10,16 @@ import { Input } from "@/components/ui/input";
 import { ApiError, api, type Connection, type Instance } from "@/lib/api";
 import { deliverTicket, readQuery } from "@/lib/bridge";
 import { useSession } from "@/lib/session";
+import { useSiteConfig } from "@/lib/site";
 import { IdentifierBlock } from "@/components/identifier-block";
 import { OidcConsent } from "@/components/oidc-consent";
+import { CaptchaWidget } from "@/components/captcha";
 
 type Phase = "checking" | "need-bind" | "ready" | "delivering" | "done";
 
 /**
- * 授权入口分流：
  *  - 带 `response_type` 的是标准 OAuth2 / OIDC 请求（第三方应用来登录本平台）；
- *  - 否则是 TFV5 客户端的票据链路（本平台给 TouchFish 发登录凭据）。
- * 两条链路共用 `/authorize` 地址，靠参数区分，避免对外暴露两个入口。
+ *  - 否则是 TFV5 客户端的票据链路（本平台给 TouchFish 发登录凭据）
  */
 export function AuthorizePage() {
   return readQuery("response_type") ? <OidcConsent /> : <Tfv5Authorize />;
@@ -28,10 +28,12 @@ export function AuthorizePage() {
 function Tfv5Authorize() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
+  const { config: site } = useSiteConfig();
 
   const clientId = readQuery("client_id") ?? "touchfish";
   const state = readQuery("state");
   const target = readQuery("target");
+  const needCaptcha = Boolean(site?.captcha.on_login);
 
   const [phase, setPhase] = useState<Phase>("checking");
   const [instance, setInstance] = useState<Instance | null>(null);
@@ -42,6 +44,8 @@ function Tfv5Authorize() {
   const [error, setError] = useState("");
   const [ticket, setTicket] = useState("");
   const [bridged_done, setBridgeDone] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   useEffect(() => {
     if (loading) return;
@@ -90,19 +94,32 @@ function Tfv5Authorize() {
   async function bind(event: React.FormEvent) {
     event.preventDefault();
     if (pending) return;
+    if (needCaptcha && !captchaToken) {
+      setError("请先完成人机验证");
+      return;
+    }
     setPending(true);
     setError("");
     try {
-      await api.bind({ identifier, password, instance_id: instance?.id });
+      await api.bind({
+        identifier,
+        password,
+        instance_id: instance?.id,
+        captcha_token: captchaToken ?? undefined,
+      });
       const result = await api.connections();
       const conn =
         result.connections.find((item) => item.instance_id === instance?.id) ??
         null;
       setConnection(conn);
       setPassword("");
+      setCaptchaToken(null);
       setPhase(conn ? "ready" : "need-bind");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "绑定失败，请稍后重试");
+      // 验证 token 一次性
+      setCaptchaToken(null);
+      setCaptchaReset((value) => value + 1);
     } finally {
       setPending(false);
     }
@@ -141,7 +158,7 @@ function Tfv5Authorize() {
       <AuthLayout
         title="已返回应用"
         description={
-          bridged_done ? "可以关闭此页面" : "请复制下面的票据返回应用"
+          bridged_done ? "可以关闭此页面" : "请复制下面的 ticket 返回应用"
         }
       >
         <div className="space-y-4">
@@ -215,6 +232,16 @@ function Tfv5Authorize() {
               </FieldDescription>
             </Field>
           </AuthItem>
+          {needCaptcha && site?.captcha.provider ? (
+            <AuthItem>
+              <CaptchaWidget
+                provider={site.captcha.provider}
+                siteKey={site.captcha.site_key}
+                onToken={setCaptchaToken}
+                resetSignal={captchaReset}
+              />
+            </AuthItem>
+          ) : null}
           <AuthItem>
             <Button
               type="submit"

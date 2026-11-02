@@ -212,7 +212,7 @@ export function AdminPage() {
     <PageWrapper className="flex flex-col gap-6">
       <PageHeader
         title="管理"
-        description="用户权限、实例与签名密钥"
+        description="管理 Auth"
         actions={
           <Button
             variant="outline"
@@ -221,7 +221,7 @@ export function AdminPage() {
               act(
                 "rotate",
                 api.adminRotateKeys,
-                "已轮换签名密钥，旧公钥保留 7 天",
+                "已轮换签名密钥，旧公钥将保留 7 天",
               )
             }
           >
@@ -436,9 +436,7 @@ export function AdminPage() {
             <Card>
               <CardHeader>
                 <CardTitle>签名密钥</CardTitle>
-                <CardDescription>
-                  轮换后新 token 用新钥签发
-                </CardDescription>
+                <CardDescription>轮换后新 token 用新钥签发</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between gap-4">
@@ -503,7 +501,7 @@ export function AdminPage() {
             {resetResult.temporary ? (
               <div className="space-y-2">
                 <p className="text-muted-foreground">
-                  临时密码（仅显示这一次，请立即转告用户）：
+                  临时密码（仅显示一次）：
                 </p>
                 <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
                   <code className="flex-1 break-all font-mono text-sm">
@@ -550,7 +548,7 @@ export function AdminPage() {
         open={createOpen}
         onClose={closeCreate}
         title="创建用户"
-        description="管理员直接建号，账号立即生效，无需邮箱验证"
+        description="管理员创建账户"
         footer={
           createResult ? (
             <Button variant="primary" onClick={closeCreate}>
@@ -613,9 +611,7 @@ export function AdminPage() {
                 </div>
               </div>
             ) : (
-              <p className="text-muted-foreground">
-                密码已指定。
-              </p>
+              <p className="text-muted-foreground">密码已指定。</p>
             )}
           </div>
         ) : (
@@ -651,9 +647,7 @@ export function AdminPage() {
                 placeholder="留空则生成 16 位临时密码"
                 autoComplete="new-password"
               />
-              <FieldDescription>
-                填写至少 8 位
-              </FieldDescription>
+              <FieldDescription>填写至少 8 位</FieldDescription>
             </Field>
             <Field>
               <FieldLabel>角色</FieldLabel>
@@ -723,8 +717,7 @@ function InstanceEditor({
       <CardHeader>
         <CardTitle>TouchFish 实例</CardTitle>
         <CardDescription>
-          改动后需更新服务器侧的
-          jwt_external_issuers
+          改动后需更新服务器侧的 jwt_external_issuers
         </CardDescription>
       </CardHeader>
       <CardContent>

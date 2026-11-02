@@ -52,10 +52,7 @@ const EMPTY: FormState = {
 };
 
 /**
- * 开发者页：本平台作为 OIDC 授权服务器时，让用户创建自己的应用并拿到接入信息。
- *
- * 自助创建受站点策略约束（`oauth_apps_self_service` / `oauth_apps_max_per_user`）；
- * 关闭时只展示已有应用与接入信息，创建入口置灰并提示联系管理员。
+ * 开发者页
  */
 export function DeveloperPage() {
   const [policy, setPolicy] = useState<Policy>({
@@ -236,7 +233,7 @@ export function DeveloperPage() {
     <PageWrapper className="flex flex-col gap-6">
       <PageHeader
         title="开发者"
-        description="用 TouchFish Auth 登录你的应用：标准 OIDC 授权码流程，支持 PKCE"
+        description="用 TouchFish Auth 登录你的应用（OIDC）"
         actions={
           policy.self_service ? (
             <StatusBadge tone="success">自助创建已开放</StatusBadge>
@@ -252,7 +249,7 @@ export function DeveloperPage() {
         <CardHeader>
           <CardTitle>接入信息</CardTitle>
           <CardDescription>
-            应用侧按标准 OIDC 配置即可；回调地址必须与创建时填写的一致
+            应用按标准 OIDC 配置
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
@@ -313,8 +310,7 @@ export function DeveloperPage() {
 
       {!policy.self_service && !loading ? (
         <Alert variant="info">
-          本站未开放自助创建应用。需要接入的话，把应用名称、回调地址与所需 scope
-          发给管理员即可；创建完成后应用会出现在下面的列表里。
+          未开放自助创建应用
         </Alert>
       ) : null}
 
@@ -332,8 +328,8 @@ export function DeveloperPage() {
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             还没有属于你的应用。
             {policy.self_service
-              ? "点右上角「新建应用」即可开始。"
-              : "管理员为你创建后会更现在这里。"}
+              ? "点击 新建应用 即可开始。"
+              : "仅显示已有应用"}
           </CardContent>
         </Card>
       ) : (
@@ -428,8 +424,8 @@ export function DeveloperPage() {
         <CardHeader>
           <CardTitle>换取令牌</CardTitle>
           <CardDescription>
-            授权码 60 秒有效且只能用一次；公开客户端需带
-            code_verifier，机密客户端用 secret
+            授权码 60 秒有效且只能用一次
+            公开客户端需带 code_verifier，机密客户端用 secret
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -480,7 +476,7 @@ export function DeveloperPage() {
             <Input
               id="dev-app-name"
               value={form.name}
-              placeholder="我的博客"
+              placeholder="Hello TouchFish"
               onChange={(event) =>
                 setForm({ ...form, name: event.target.value })
               }
@@ -502,7 +498,8 @@ export function DeveloperPage() {
               className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
             />
             <FieldDescription>
-              逐字符精确匹配，不支持通配符；不要带 fragment
+              逐字符精确匹配，不支持通配符
+              不支持带 fragment
             </FieldDescription>
           </Field>
 
@@ -553,7 +550,8 @@ export function DeveloperPage() {
               <span>
                 公开客户端（无 client_secret，强制 PKCE）
                 <span className="ml-2 text-xs text-muted-foreground">
-                  SPA、桌面端、移动端选它；有后端能保管密钥的服务端应用请取消勾选
+                  仅客户端时使用
+                  有后端能保管密钥的服务端应用无需勾选
                 </span>
               </span>
             </label>
@@ -565,7 +563,7 @@ export function DeveloperPage() {
         open={secretInfo !== null}
         onClose={() => setSecretInfo(null)}
         title="密钥只显示这一次"
-        description="关闭后无法再次查看。请立刻复制并配置到应用里，遗失只能重置。"
+        description="关闭后无法再次查看"
         footer={
           <Button variant="primary" onClick={() => setSecretInfo(null)}>
             我已保存
@@ -605,7 +603,7 @@ export function DeveloperPage() {
         open={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         title={`删除 ${deleteTarget?.name ?? ""}`}
-        description="该应用已签发的访问令牌与刷新令牌会立刻失效，且无法撤销。"
+        description="该应用已签发的访问令牌与刷新令牌会立刻失效，且无法撤销"
         footer={
           <>
             <Button variant="ghost" onClick={() => setDeleteTarget(null)}>

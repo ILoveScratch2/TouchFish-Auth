@@ -291,6 +291,7 @@ export const api = {
     identifier: string;
     password: string;
     instance_id?: string;
+    captcha_token?: string;
   }) =>
     request<{
       connection: { channel: string; tfv5_uid: number; tfv5_username: string };

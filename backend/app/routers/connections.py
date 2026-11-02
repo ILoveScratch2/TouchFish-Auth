@@ -59,21 +59,49 @@ def bind(body: BindBody, request: Request):
     if instance is None:
         return api_error(400, "no_instance", "尚未配置 TouchFish 服务器")
 
+    values = site.all_values(runtime.db, runtime.settings)
+    ip = client_ip(request)
+
+    # 绑定本质上是 TFV5 凭据登录
+    if values["captcha_on_login"]:
+        failed = gate.check_captcha(
+            runtime.db, values, body.captcha_token,
+            ip=ip, ua=user_agent(request),
+        )
+        if failed is not None:
+            return api_error(400, "captcha_failed", f"人机验证未通过：{failed.message}")
+
+    wait = gate.login_blocked(values, ip, body.identifier)
+    if wait:
+        runtime.db.audit("connection.bind_throttled", user["user_id"], ip,
+                         user_agent(request), detail=body.identifier[:32])
+        return throttle_error(wait)
+
     try:
         result = binding_service.bind(runtime.db, runtime.settings, user["user_id"],
                                       instance, body.identifier, body.password)
     except binding_service.BindError as exc:
-        runtime.db.audit("connection.bind_failed", user["user_id"],
-                         client_ip(request), user_agent(request), detail=exc.code)
+        _count_failure(values, ip, body.identifier, exc.code)
+        runtime.db.audit("connection.bind_failed", user["user_id"], ip,
+                         user_agent(request), detail=exc.code)
         status = 401 if exc.code == "tfv5_bad_credentials" else 409
         return api_error(status, exc.code, exc.message)
     except Tfv5Error as exc:
         return api_error(502, exc.code, str(exc))
 
-    runtime.db.audit("connection.bind", user["user_id"], client_ip(request),
-                     user_agent(request),
+    gate.login_succeeded(ip, body.identifier)
+    runtime.db.audit("connection.bind", user["user_id"], ip, user_agent(request),
                      detail=f"{instance.id}:{result.get('tfv5_uid')}:{result.get('channel')}")
     return JSONResponse({"connection": result})
+
+
+# 只有"凭据不对"才计入
+CREDENTIAL_FAILURES = {"tfv5_bad_credentials", "tfv5_banned"}
+
+
+def _count_failure(values: dict, ip: str, identifier: str, code: str) -> None:
+    if code in CREDENTIAL_FAILURES:
+        gate.login_failed(values, ip, identifier)
 
 
 @router.post("/api/connections/tfv5-login")

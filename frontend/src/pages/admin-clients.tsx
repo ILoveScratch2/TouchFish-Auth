@@ -143,7 +143,7 @@ export function OidcClientsPage() {
     setFormError("");
     try {
       if (editing) {
-        // 公开/机密在创建后不可改：改类型等于更换安全模型，应重建客户端
+        // 公开/机密在创建后不可改
         await api.adminUpdateOidcClient(editing.client_id, {
           name: form.name.trim(),
           redirect_uris: redirectUris,
@@ -221,9 +221,7 @@ export function OidcClientsPage() {
       <Card>
         <CardHeader>
           <CardTitle>接入信息</CardTitle>
-          <CardDescription>
-            应用侧按标准 OIDC 配置
-          </CardDescription>
+          <CardDescription>应用侧按标准 OIDC 配置</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {ENDPOINTS.map((item) => (
@@ -363,9 +361,7 @@ export function OidcClientsPage() {
         onClose={() => setOpen(false)}
         title={editing ? `编辑 ${editing.name}` : "新建应用"}
         description={
-          editing
-            ? "改动回调地址会立即生效"
-            : "服务端应用请选机密客户端"
+          editing ? "改动回调地址会立即生效" : "服务端应用请选机密客户端"
         }
         className="max-w-xl"
         footer={
@@ -415,9 +411,7 @@ export function OidcClientsPage() {
               }
               className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
             />
-            <FieldDescription>
-              逐字符精确匹配，不支持通配符
-            </FieldDescription>
+            <FieldDescription>逐字符精确匹配，不支持通配符</FieldDescription>
           </Field>
 
           <Field>

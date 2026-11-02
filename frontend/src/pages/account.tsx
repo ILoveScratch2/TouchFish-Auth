@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 
 const OAUTH_ERROR_TEXT: Record<string, string> = {
   access_denied: "你在第三方页面取消了授权",
-  state_invalid: "授权已过期或被篡改，请重试",
+  state_invalid: "授权已过期或修改，请重试",
   provider_unavailable: "该登录方式未启用或配置不完整，请联系管理员",
   bind_session_mismatch: "登录状态已变化，请重新登录后再绑定",
   provider_already_bound: "该第三方账号已绑定到另一个平台账号",
@@ -299,7 +299,7 @@ export function AccountPage() {
               {!hasPassword &&
               providers.filter((item) => item.linked).length <= 1 ? (
                 <FieldDescription>
-                  当前账号没有平台密码：唯一的登录方式不能解绑，请先在上方设置密码
+                  唯一的登录方式不能解绑，请先在上方设置密码或绑定其他登录方式
                 </FieldDescription>
               ) : null}
             </CardContent>
@@ -311,7 +311,7 @@ export function AccountPage() {
         open={unlinkTarget !== null}
         onClose={() => setUnlinkTarget(null)}
         title={`解绑 ${unlinkTarget?.name ?? ""}`}
-        description="解绑后将无法再用该账号登录本平台，已登录的会话不受影响。"
+        description="解绑后将无法再用该账号登录本平台，已登录的会话不受影响"
         footer={
           <>
             <Button variant="ghost" onClick={() => setUnlinkTarget(null)}>

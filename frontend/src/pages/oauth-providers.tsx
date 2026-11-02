@@ -168,7 +168,7 @@ export function OAuthProvidersPage() {
         setNotice(`已添加 ${form.display_name}`);
       }
       setOpen(false);
-      // 登录页用的是缓存过的站点配置，改完要让下次渲染重新拉
+      // 登录页用是缓存过的站点配置
       invalidateSiteConfig();
       await load();
     } catch (err) {
@@ -222,7 +222,7 @@ export function OAuthProvidersPage() {
           <div>
             <CardTitle>已接入的平台</CardTitle>
             <CardDescription>
-              凭证不全或已停用的平台不会出现在登录页。secret 只保存不回显。
+              凭证不全或已停用的平台不会出现在登录页
             </CardDescription>
           </div>
           <div className="flex shrink-0 gap-2">
@@ -251,7 +251,7 @@ export function OAuthProvidersPage() {
             </div>
           ) : providers.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-              还没有接入任何第三方平台。点「添加平台」从模板开始。
+              还没有接入任何第三方平台
             </div>
           ) : (
             <motion.div
@@ -332,7 +332,7 @@ export function OAuthProvidersPage() {
         open={open}
         onClose={() => setOpen(false)}
         title={editing ? `编辑 ${editing.display_name}` : "添加第三方平台"}
-        description="端点、scope 与字段映射都可在「高级」里调整；不同平台返回结构不一样时改这里。"
+        description="端点、scope 与字段映射都可在 高级 里调整，不同平台返回结构不一样时可改"
         className="max-w-xl"
         footer={
           <div className="flex justify-end gap-2">
@@ -496,8 +496,8 @@ export function OAuthProvidersPage() {
             </Field>
           </div>
           <FieldDescription>
-            令牌端点被对方以 401 / invalid_client
-            拒绝时，通常就是「认证方式」选错了
+            令牌端点被 401 / invalid_client
+            拒绝时，请检查 认证方式
           </FieldDescription>
           <details className="rounded-lg border border-border px-4 py-3">
             <summary className="cursor-pointer text-sm font-medium">
@@ -537,10 +537,7 @@ export function OAuthProvidersPage() {
                 />
                 <FieldDescription>
                   逗号分隔。客户端用它识别"这是预期的第三方跳转"（如
-                  github.com），
-                  仅作诊断记录——导航本身不再按域名拦截，否则验证码、企业 SSO
-                  这类任意域名的中间页会把登录卡死。票据交接仍由 JS 桥同源 +
-                  state 校验保护。
+                  github.com）
                 </FieldDescription>
               </Field>
             </div>
@@ -565,7 +562,7 @@ export function OAuthProvidersPage() {
         title={`删除 ${deleteTarget?.display_name ?? ""}`}
         description={
           deleteTarget && deleteTarget.linked_accounts > 0
-            ? `有 ${deleteTarget.linked_accounts} 个账号绑定了这个平台，删除后他们将无法再用它登录（账号本身还在）。`
+            ? `有 ${deleteTarget.linked_accounts} 个账号绑定了这个平台，删除后他们将无法再用它登录。`
             : "删除后登录页会立刻移除该入口。"
         }
         footer={
@@ -591,7 +588,7 @@ export function OAuthProvidersPage() {
         }
       >
         <p className="text-sm text-muted-foreground">
-          想临时关闭入口而不是删配置，可以把「启用」取消勾选。
+          想临时关闭入口可取消勾选 启用
         </p>
       </Dialog>
     </PageWrapper>

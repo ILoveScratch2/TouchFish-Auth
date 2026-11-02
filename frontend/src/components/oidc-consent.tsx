@@ -9,7 +9,6 @@ import { ApiError, api, type OidcRequestMeta } from "@/lib/api";
 import { readQuery } from "@/lib/bridge";
 import { useSession } from "@/lib/session";
 
-
 const SCOPE_TEXT: Record<string, string> = {
   openid: "确认你的身份 ID",
   profile: "读取你的用户名与昵称",

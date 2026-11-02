@@ -98,7 +98,7 @@ export function AuthLayout({
   );
 }
 
-/** 单个入场元素。放在 AuthLayout 内会自动继承错开 */
+/** 单个入场元素，Layout 内继承错开 */
 export function AuthItem({
   children,
   className,

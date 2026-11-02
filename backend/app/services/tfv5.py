@@ -127,10 +127,12 @@ class Tfv5Client:
             raise Tfv5Error("tfv5_protocol_error",
                             f"TFV5 响应无法解密（HTTP {resp.status_code}）", resp.status_code) from exc
 
-    def _plain_get(self, instance: Instance, path: str, params: dict[str, str] | None = None) -> Any:
+    def _plain_get(self, instance: Instance, path: str, params: dict[str, str] | None = None,
+                   timeout: float | None = None) -> Any:
         base = self._check_url(instance.base_url, instance.allow_insecure_http)
         try:
-            resp = self._client.get(f"{base}{path}", params=params, timeout=STATUS_TIMEOUT)
+            resp = self._client.get(f"{base}{path}", params=params,
+                                    timeout=timeout or STATUS_TIMEOUT)
         except httpx.HTTPError as exc:
             raise Tfv5Error("tfv5_unreachable", f"无法连接 TFV5：{exc}") from exc
         if resp.status_code != 200:
@@ -218,8 +220,9 @@ class Tfv5Client:
             raise Tfv5Error(code, "该 TouchFish 账号已关联其他平台账户")
         return result
 
-    def info(self, instance: Instance) -> dict[str, Any] | None:
-        data = self._plain_get(instance, "/info")
+    def info(self, instance: Instance, timeout: float | None = None) -> dict[str, Any] | None:
+        """读取 TFV5 的 /info"""
+        data = self._plain_get(instance, "/info", timeout=timeout)
         return data if isinstance(data, dict) else None
 
 

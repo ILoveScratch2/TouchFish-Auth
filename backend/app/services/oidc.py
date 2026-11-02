@@ -4,16 +4,20 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import hmac
 import secrets
 import time
 from typing import Any
 
 from ..db import Db
-from ..security.passwords import hash_password, verify_password
+from ..security.passwords import verify_password
 
 CODE_TTL = 60.0
 ACCESS_TTL = 3600.0
 REFRESH_TTL = 30 * 86400.0
+
+# client_secret 的存储前缀
+SECRET_PREFIX = "sha256:"
 
 # 当前支持的全部 scope
 # 新增时要同步 well-known 的 scopes_supported
@@ -36,6 +40,10 @@ def _sha256(value: str) -> str:
 
 def _b64url(raw: bytes) -> str:
     return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+
+def _secret_hash(secret: str) -> str:
+    return SECRET_PREFIX + hashlib.sha256(secret.encode("utf-8")).hexdigest()
 
 
 # ---------------------------------------------------------------- 客户端注册
@@ -138,7 +146,7 @@ def create_client(db: Db, name: str, redirect_uris: list[str],
         " redirect_uris, scopes, owner_id, enabled, created_at, updated_at)"
         " VALUES (?,?,?,?,?,?,?,?,?,?)",
         (secrets.token_hex(12), client_id, name,
-         None if public else hash_password(secret or ""),
+         None if public else _secret_hash(secret or ""),
          "\n".join(redirect_uris), " ".join(dict.fromkeys(wanted)),
          owner_id, 1, now, now),
     )
@@ -189,7 +197,7 @@ def rotate_secret(db: Db, client_id: str) -> str:
     secret = secrets.token_urlsafe(32)
     db.execute(
         "UPDATE oauth_clients SET secret_hash = ?, updated_at = ? WHERE client_id = ?",
-        (hash_password(secret), time.time(), client_id),
+        (_secret_hash(secret), time.time(), client_id),
     )
     return secret
 
@@ -214,7 +222,20 @@ def verify_client_secret(db: Db, client_id: str, secret: str) -> bool:
     row = find_client(db, client_id)
     if row is None or row["secret_hash"] is None:
         return False
-    return verify_password(row["secret_hash"], secret)
+    stored = str(row["secret_hash"])
+    if stored.startswith(SECRET_PREFIX):
+        expected = hashlib.sha256(secret.encode("utf-8")).hexdigest()
+        return hmac.compare_digest(stored[len(SECRET_PREFIX):], expected)
+    if not verify_password(stored, secret):
+        return False
+    try:
+        db.execute(
+            "UPDATE oauth_clients SET secret_hash = ?, updated_at = ? WHERE client_id = ?",
+            (_secret_hash(secret), time.time(), client_id),
+        )
+    except Exception:  # noqa: BLE001
+        pass
+    return True
 
 
 # ---------------------------------------------------------------- 授权请求
@@ -239,11 +260,9 @@ def check_authorize_request(db: Db, client_id: str, redirect_uri: str,
     method = (code_challenge_method or "").upper() or None
     challenge = (code_challenge or "").strip() or None
     if challenge is not None and method != "S256":
-        # 只支持 S256：plain 等于把 verifier 明文放进授权请求，
-        # 一旦授权码被截获就失去意义。
+        # 只支持 S256
         raise OidcError("invalid_request", "code_challenge_method 只支持 S256")
     if challenge is None and row["secret_hash"] is None:
-        # 公开客户端没有 secret，PKCE 是唯一的代码换取凭证的保护
         raise OidcError("invalid_request", "公开客户端必须使用 PKCE（code_challenge）")
 
     return {
@@ -284,7 +303,7 @@ def _verify_pkce(challenge: str, method: str | None, verifier: str | None) -> bo
     try:
         digest = hashlib.sha256(verifier.encode("ascii")).digest()
     except UnicodeEncodeError:
-        # 非 ASCII 的 verifier 不可能与 S256 challenge 对上
+        # 非 ASCII 的 verifier
         return False
     return secrets.compare_digest(_b64url(digest), challenge)
 
@@ -308,8 +327,8 @@ def redeem_code(db: Db, client_id: str, code: str, redirect_uri: str,
         if not _verify_pkce(row["code_challenge"], row["code_challenge_method"],
                             verifier):
             raise OidcError("invalid_grant", "code_verifier 校验失败")
-    # 没有 challenge 说明是机密客户端（公开客户端在 /authorize 阶段被强制要求 PKCE），
-    # 此时 PKCE 是可选的：不能再要求 code_verifier，否则这类客户端永远兑换不了。
+    # 没有 challenge 说明是机密客户端
+    # 此时 PKCE 是可选的
 
     consumed = db.execute(
         "UPDATE oauth_codes SET consumed_at = ? WHERE code_hash = ?"
@@ -338,8 +357,7 @@ def _claims_for_user(db: Db, user_id: str, scope: str) -> dict[str, Any]:
         claims["name"] = row["display_name"] or row["username"]
     if "email" in scopes and row["email"]:
         claims["email"] = row["email"]
-        # email_key 在"注册但未验证"时也会写入（status=pending），
-        # 所以不能只看它存在：pending 账号一律报未验证。
+        # email_key 在"注册但未验证"时也会写入
         claims["email_verified"] = bool(row["email_key"]) and row["status"] != "pending"
     return claims
 
@@ -380,8 +398,6 @@ def issue_tokens(db: Db, keystore: Any, settings: Any, client_id: str,
             "nbf": int(now),
             "exp": int(now + ACCESS_TTL),
             "jti": secrets.token_hex(16),
-            # 与 TFV5 的外部登录令牌区分开：TFV5 只接受 token_use 为空的旧令牌
-            # 或显式标记 tfv5 的令牌，id_token 不该能在那边换会话。
             "token_use": "id",
             "auth_time": int(now),
             **_claims_for_user(db, user_id, scope),

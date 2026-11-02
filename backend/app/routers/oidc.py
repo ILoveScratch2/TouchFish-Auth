@@ -12,16 +12,22 @@ from pydantic import BaseModel, Field
 from ..deps import api_error, client_ip, current_user, user_agent
 from ..runtime import get as get_runtime
 from ..services import oidc
+from ..services import throttle as throttle_service
 
 router = APIRouter()
 
+# `/token` 的请求体上限
+MAX_FORM_BYTES = 16 * 1024
 
-def _oauth_error(code: str, description: str, status: int = 400) -> JSONResponse:
-    return JSONResponse(
-        {"error": code, "error_description": description},
-        status_code=status,
-        headers={"Cache-Control": "no-store", "Pragma": "no-cache"},
-    )
+
+def _oauth_error(code: str, description: str, status: int = 400,
+                 retry_after: int | None = None) -> JSONResponse:
+    headers = {"Cache-Control": "no-store", "Pragma": "no-cache"}
+    body: dict[str, object] = {"error": code, "error_description": description}
+    if retry_after:
+        headers["Retry-After"] = str(retry_after)
+        body["retry_after"] = retry_after
+    return JSONResponse(body, status_code=status, headers=headers)
 
 
 def _append_query(uri: str, params: dict[str, str | None]) -> str:
@@ -50,9 +56,20 @@ def _basic_credentials(request: Request) -> tuple[str, str] | None:
     return unquote(client_id), unquote(secret)
 
 
+class _BodyTooLarge(Exception):
+    pass
+
+
 async def _form(request: Request) -> dict[str, str]:
-    """解析 application/x-www-form-urlencoded，不引入 python-multipart。"""
-    body = (await request.body()).decode("utf-8", "replace")
+    """解析 application/x-www-form-urlencoded，不引入 python-multipart"""
+    chunks: list[bytes] = []
+    total = 0
+    async for chunk in request.stream():
+        total += len(chunk)
+        if total > MAX_FORM_BYTES:
+            raise _BodyTooLarge
+        chunks.append(chunk)
+    body = b"".join(chunks).decode("utf-8", "replace")
     parsed = parse_qs(body, keep_blank_values=True)
     return {key: values[0] for key, values in parsed.items() if values}
 
@@ -154,7 +171,20 @@ def oidc_approve(body: AuthorizeBody, request: Request):
 @router.post("/token")
 async def token_endpoint(request: Request):
     runtime = get_runtime()
-    form = await _form(request)
+    ip, ua = client_ip(request), user_agent(request)
+    limiter = throttle_service.token()
+    bucket = f"token:{ip}"
+    wait = limiter.blocked_for(bucket)
+    if wait:
+        runtime.db.audit("oidc.token_throttled", None, ip, ua)
+        return _oauth_error("too_many_attempts",
+                            f"尝试次数过多，请 {wait} 秒后再试", 429, retry_after=wait)
+
+    try:
+        form = await _form(request)
+    except _BodyTooLarge:
+        return _oauth_error("invalid_request", "请求体过大", 413)
+
     grant_type = form.get("grant_type", "")
 
     if grant_type not in ("authorization_code", "refresh_token"):
@@ -165,17 +195,21 @@ async def token_endpoint(request: Request):
     client_id = basic[0] if basic else form.get("client_id", "")
     client_secret = basic[1] if basic else form.get("client_secret", "")
     if not client_id:
+        limiter.fail(bucket)
         return _oauth_error("invalid_client", "缺少 client_id", 401)
 
     client = oidc.find_client(runtime.db, client_id)
     if client is None or not client["enabled"]:
+        limiter.fail(bucket)
         return _oauth_error("invalid_client", "未知或已停用的客户端", 401)
     if client["secret_hash"] is not None:
         if not client_secret or not oidc.verify_client_secret(
                 runtime.db, client_id, client_secret):
+            limiter.fail(bucket)
             return _oauth_error("invalid_client", "client_secret 不正确", 401)
 
-    ip, ua = client_ip(request), user_agent(request)
+    limiter.reset(bucket)
+
     try:
         if grant_type == "authorization_code":
             code = form.get("code", "")
