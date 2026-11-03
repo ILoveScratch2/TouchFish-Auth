@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ApiError, api, type OidcRequestMeta } from "@/lib/api";
 import { readQuery } from "@/lib/bridge";
 import { useSession } from "@/lib/session";
+import { useSiteName } from "@/lib/site";
 
 const SCOPE_TEXT: Record<string, string> = {
   openid: "确认你的身份 ID",
@@ -18,6 +19,7 @@ const SCOPE_TEXT: Record<string, string> = {
 export function OidcConsent() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
+  const siteName = useSiteName();
 
   const [meta, setMeta] = useState<OidcRequestMeta | null>(null);
   const [error, setError] = useState("");
@@ -103,7 +105,7 @@ export function OidcConsent() {
           ? `授权后将返回 ${clientName}，第三方平台无法获得你的其他信息，也不能代表你进行任何操作`
           : undefined
       }
-      footer="由 TouchFish Auth 提供账号服务"
+      footer={`由 ${siteName} 提供账号服务`}
     >
       {error ? (
         <Alert variant="destructive" className="mb-4">

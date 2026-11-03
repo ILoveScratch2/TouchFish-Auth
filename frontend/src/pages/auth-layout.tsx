@@ -14,6 +14,7 @@ import {
   easings,
 } from "@/components/ui/motion";
 import { ShellThemeToggle } from "@/components/app-shell";
+import { useSiteName } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 interface AuthLayoutProps {
@@ -32,6 +33,7 @@ export function AuthLayout({
   children,
 }: AuthLayoutProps) {
   const reduced = useReducedMotion();
+  const siteName = useSiteName();
   return (
     <div className="h-dvh overflow-y-auto overscroll-contain p-4">
       <div className="flex min-h-full flex-col gap-4">
@@ -58,7 +60,7 @@ export function AuthLayout({
               >
                 <img
                   src="/logo.png"
-                  alt="TouchFish"
+                  alt={siteName}
                   className="h-full w-full object-contain"
                 />
               </motion.div>

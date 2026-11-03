@@ -24,6 +24,7 @@ import {
 import { ApiError, api, type OAuthAccountProvider } from "@/lib/api";
 import { formatTime } from "@/lib/format";
 import { useSession } from "@/lib/session";
+import { useSiteName } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 const OAUTH_ERROR_TEXT: Record<string, string> = {
@@ -38,6 +39,7 @@ const OAUTH_ERROR_TEXT: Record<string, string> = {
 
 export function AccountPage() {
   const { user, refresh } = useSession();
+  const siteName = useSiteName();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [pending, setPending] = useState(false);
@@ -127,7 +129,7 @@ export function AccountPage() {
 
   return (
     <PageWrapper className="flex flex-col gap-6">
-      <PageHeader title="账户" description="管理你的 TouchFish Auth 身份" />
+      <PageHeader title="账户" description={`管理你的 ${siteName} 身份`} />
 
       <motion.div
         variants={listContainerVariants}

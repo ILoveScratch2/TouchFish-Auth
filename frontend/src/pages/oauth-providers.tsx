@@ -496,8 +496,7 @@ export function OAuthProvidersPage() {
             </Field>
           </div>
           <FieldDescription>
-            令牌端点被 401 / invalid_client
-            拒绝时，请检查 认证方式
+            令牌端点被 401 / invalid_client 拒绝时，请检查 认证方式
           </FieldDescription>
           <details className="rounded-lg border border-border px-4 py-3">
             <summary className="cursor-pointer text-sm font-medium">

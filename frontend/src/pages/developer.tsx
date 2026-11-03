@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/primitives";
 import { ApiError, api, type OidcClient } from "@/lib/api";
 import { formatTime } from "@/lib/format";
+import { useSiteName } from "@/lib/site";
 
 const ALL_SCOPES = [
   { id: "openid", label: "openid", hint: "身份标识（必选）" },
@@ -55,6 +56,7 @@ const EMPTY: FormState = {
  * 开发者页
  */
 export function DeveloperPage() {
+  const siteName = useSiteName();
   const [policy, setPolicy] = useState<Policy>({
     self_service: false,
     max_per_user: 0,
@@ -233,7 +235,7 @@ export function DeveloperPage() {
     <PageWrapper className="flex flex-col gap-6">
       <PageHeader
         title="开发者"
-        description="用 TouchFish Auth 登录你的应用（OIDC）"
+        description={`用 ${siteName} 登录你的应用（OIDC）`}
         actions={
           policy.self_service ? (
             <StatusBadge tone="success">自助创建已开放</StatusBadge>
@@ -248,9 +250,7 @@ export function DeveloperPage() {
       <Card>
         <CardHeader>
           <CardTitle>接入信息</CardTitle>
-          <CardDescription>
-            应用按标准 OIDC 配置
-          </CardDescription>
+          <CardDescription>应用按标准 OIDC 配置</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {[
@@ -309,9 +309,7 @@ export function DeveloperPage() {
       </div>
 
       {!policy.self_service && !loading ? (
-        <Alert variant="info">
-          未开放自助创建应用
-        </Alert>
+        <Alert variant="info">未开放自助创建应用</Alert>
       ) : null}
 
       {quotaFull ? (
@@ -424,8 +422,8 @@ export function DeveloperPage() {
         <CardHeader>
           <CardTitle>换取令牌</CardTitle>
           <CardDescription>
-            授权码 60 秒有效且只能用一次
-            公开客户端需带 code_verifier，机密客户端用 secret
+            授权码 60 秒有效且只能用一次 公开客户端需带
+            code_verifier，机密客户端用 secret
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -498,8 +496,7 @@ export function DeveloperPage() {
               className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
             />
             <FieldDescription>
-              逐字符精确匹配，不支持通配符
-              不支持带 fragment
+              逐字符精确匹配，不支持通配符 不支持带 fragment
             </FieldDescription>
           </Field>
 
@@ -550,8 +547,7 @@ export function DeveloperPage() {
               <span>
                 公开客户端（无 client_secret，强制 PKCE）
                 <span className="ml-2 text-xs text-muted-foreground">
-                  仅客户端时使用
-                  有后端能保管密钥的服务端应用无需勾选
+                  仅客户端时使用 有后端能保管密钥的服务端应用无需勾选
                 </span>
               </span>
             </label>

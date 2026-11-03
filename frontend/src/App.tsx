@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 
 import { SessionProvider } from "@/lib/session";
+import { useSiteName } from "@/lib/site";
 import { AccountPage } from "@/pages/account";
 import { AdminPage } from "@/pages/admin";
 import { AuditPage } from "@/pages/audit";
@@ -20,6 +22,11 @@ import { SessionsPage } from "@/pages/sessions";
 import { SiteSettingsPage } from "@/pages/site-settings";
 
 export default function App() {
+  const siteName = useSiteName();
+  useEffect(() => {
+    document.title = siteName;
+  }, [siteName]);
+
   return (
     <MotionConfig reducedMotion="user">
       <SessionProvider>

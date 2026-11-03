@@ -33,6 +33,7 @@ import {
 import { Skeleton } from "@/components/ui/primitives";
 import { ApiError, api } from "@/lib/api";
 import { formatTime } from "@/lib/format";
+import { useSiteName } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 type Overview = Awaited<ReturnType<typeof api.adminOverview>>;
@@ -47,6 +48,7 @@ const USER_FILTERS = [
 type UserFilter = (typeof USER_FILTERS)[number]["key"];
 
 export function AdminPage() {
+  const siteName = useSiteName();
   const [data, setData] = useState<Overview | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
@@ -669,7 +671,7 @@ export function AdminPage() {
                 ))}
               </div>
               <FieldDescription>
-                拥有 TouchFish Auth 平台管理员权限
+                拥有 {siteName} 平台管理员权限
               </FieldDescription>
             </Field>
           </div>

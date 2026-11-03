@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/primitives";
 import { ApiError, api, type OidcClient } from "@/lib/api";
 import { formatTime } from "@/lib/format";
+import { useSiteName } from "@/lib/site";
 
 const ALL_SCOPES = [
   { id: "openid", label: "openid", hint: "身份标识（必选，id_token 的基础）" },
@@ -56,6 +57,7 @@ const EMPTY: FormState = {
 };
 
 export function OidcClientsPage() {
+  const siteName = useSiteName();
   const [clients, setClients] = useState<OidcClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
@@ -213,7 +215,7 @@ export function OidcClientsPage() {
     <PageWrapper className="space-y-6">
       <PageHeader
         title="应用接入"
-        description="TouchFish Auth 作为 OIDC 授权服务器授权"
+        description={`${siteName} 作为 OIDC 授权服务器`}
       />
 
       {pageError ? <Alert variant="destructive">{pageError}</Alert> : null}

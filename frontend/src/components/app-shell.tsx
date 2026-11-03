@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { springs } from "@/components/ui/motion";
 import type { User } from "@/lib/api";
 import { useSession } from "@/lib/session";
+import { splitSiteName, useSiteName } from "@/lib/site";
 
 export interface NavItem {
   to: string;
@@ -36,6 +37,8 @@ export function AppShell({ user, nav, children }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggle } = useTheme();
   const { signOut } = useSession();
+  const siteName = useSiteName();
+  const [brandMain, brandSub] = splitSiteName(siteName);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -69,11 +72,13 @@ export function AppShell({ user, nav, children }: AppShellProps) {
         {!collapsed && (
           <div className="min-w-0 flex-1 leading-none">
             <div className="truncate font-display text-sm font-semibold tracking-tight">
-              TouchFish
+              {brandMain}
             </div>
-            <div className="mt-0.5 truncate text-xs text-muted-foreground">
-              Auth
-            </div>
+            {brandSub ? (
+              <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                {brandSub}
+              </div>
+            ) : null}
           </div>
         )}
         {!collapsed && (
@@ -204,8 +209,8 @@ export function AppShell({ user, nav, children }: AppShellProps) {
             <Menu />
           </Button>
           <img src="/logo.png" alt="" className="size-5 object-contain" />
-          <span className="font-display text-sm font-semibold">
-            TouchFish Auth
+          <span className="min-w-0 truncate font-display text-sm font-semibold">
+            {siteName}
           </span>
           <div className="flex-1" />
           <Button

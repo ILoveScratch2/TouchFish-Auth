@@ -13,7 +13,7 @@ import { MethodButton, OrDivider } from "@/components/method-button";
 import { OAuthButtons, oauthErrorText } from "@/components/oauth-buttons";
 import { ApiError, api, fetchAuthConfig, type AuthMethod } from "@/lib/api";
 import { useSession } from "@/lib/session";
-import { useSiteConfig } from "@/lib/site";
+import { DEFAULT_SITE_NAME, useSiteConfig } from "@/lib/site";
 import { CaptchaWidget } from "@/components/captcha";
 
 type Mode = "platform" | "tfv5";
@@ -102,7 +102,7 @@ export function LoginPage() {
       title="登录"
       description={
         mode === "platform"
-          ? "使用 TouchFish Auth 账号继续"
+          ? `使用 ${site?.site_name?.trim() || DEFAULT_SITE_NAME} 账号继续`
           : "使用 TouchFish 服务器账号登录"
       }
       footer={
