@@ -1,0 +1,151 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "20"
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  frontend:
+    name: 前端(FRONTEND)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Wangyufan
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build（tsc -b && vite build）
+        working-directory: frontend
+        run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 1
+
+  backend:
+    name: 后端(BACKEND)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Xishufanxing
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Check Wangxiehang
+        working-directory: backend
+        run: python -m compileall -q app
+
+      - name: Import Test
+        working-directory: backend
+        run: python -c "import app.main"
+
+  package:
+    name: GET (${{ matrix.platform }})
+    needs: [frontend, backend]
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Frontend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Packaging Dependencies
+        shell: bash
+        run: pip install -r backend/requirements.txt pyinstaller
+
+      - name: PyInstaller 打包
+        shell: bash
+        run: pyinstaller --noconfirm --clean packaging/touchfish-auth.spec
+
+      - name: Include README and Example Config
+        shell: bash
+        run: |
+          cp backend/.env.example dist/touchfish-auth/.env.example
+          cp packaging/README.txt dist/touchfish-auth/README.txt
+
+      - name: Compress
+        shell: bash
+        run: |
+          mkdir -p release
+          cd dist
+          python -m zipfile -c "../release/touchfish-auth-${{ matrix.platform }}.zip" touchfish-auth
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: touchfish-auth-${{ matrix.platform }}
+          path: release/*.zip
+          retention-days: 7
+
+  release:
+    name: Publish to TFgirl
+    if: github.event_name == 'release'
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Collect Artifacts from All Platforms
+        uses: actions/download-artifact@v4
+        with:
+          pattern: touchfish-auth-*
+          path: release
+          merge-multiple: true
+
+      - name: Add Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.zip
+          fail_on_unmatched_files: true

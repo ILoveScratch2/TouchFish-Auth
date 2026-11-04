@@ -30,6 +30,27 @@ npm run build      # 产物给后端托管
 
 `AUTH_BASE_URL` 与 `AUTH_MASTER_KEY` 必填。
 
+## 打包可执行文件
+
+CI 见 `.github/workflows/build.yml`：push 到 main 时构建三平台产物并作为 artifact 上传；
+在 GitHub 上发布 Release 时自动附上 `touchfish-auth-{linux,windows,macos}.zip`。
+
+本地复现：
+
+```bash
+cd frontend && npm ci && npm run build && cd ..
+pip install -r backend/requirements.txt pyinstaller
+pyinstaller --noconfirm --clean packaging/touchfish-auth.spec
+```
+
+产物在 `dist/touchfish-auth/`，自带前端静态资源；配置与状态（`.env`、`data/`、`keys/`）
+都放在可执行文件旁边，升级时保留这三者即可。运维命令同样可用：
+
+```bash
+./touchfish-auth promote <username>
+./touchfish-auth list
+```
+
 ## 管理员
 
 管理员只能由本机命令授予：

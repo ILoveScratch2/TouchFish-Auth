@@ -4,10 +4,16 @@ from __future__ import annotations
 
 import base64
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
+
+_FROZEN = bool(getattr(sys, "frozen", False))
+_RESOURCE_DIR = (Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
+                 if _FROZEN else _BACKEND_DIR.parent)
+_STATE_DIR = Path(sys.executable).resolve().parent if _FROZEN else _BACKEND_DIR
 
 
 def _load_dotenv(path: Path) -> None:
@@ -82,7 +88,7 @@ class Settings:
 
 
 def load_settings(env_file: Path | None = None) -> Settings:
-    _load_dotenv(env_file or (_BACKEND_DIR / ".env"))
+    _load_dotenv(env_file or (_STATE_DIR / ".env"))
 
     base_url = _str("AUTH_BASE_URL").rstrip("/")
     if not base_url:
@@ -117,8 +123,8 @@ def load_settings(env_file: Path | None = None) -> Settings:
     return Settings(
         base_url=base_url,
         issuer=issuer,
-        db_path=(_BACKEND_DIR / _str("AUTH_DB_PATH", "./data/auth.db")).resolve(),
-        key_dir=(_BACKEND_DIR / _str("AUTH_KEY_DIR", "./keys")).resolve(),
+        db_path=(_STATE_DIR / _str("AUTH_DB_PATH", "./data/auth.db")).resolve(),
+        key_dir=(_STATE_DIR / _str("AUTH_KEY_DIR", "./keys")).resolve(),
         master_key=master_key,
         allow_registration=mode,
         default_instance_url=_str("AUTH_DEFAULT_INSTANCE_URL").rstrip("/"),
@@ -129,7 +135,7 @@ def load_settings(env_file: Path | None = None) -> Settings:
         ticket_ttl=_int("AUTH_TICKET_TTL", 60),
         cookie_secure=_bool("AUTH_COOKIE_SECURE", True),
         allowed_origins=_split("AUTH_ALLOWED_ORIGINS"),
-        frontend_dist=(_BACKEND_DIR.parent / "frontend" / "dist").resolve(),
+        frontend_dist=(_RESOURCE_DIR / "frontend" / "dist").resolve(),
         dev_mail=_bool("AUTH_DEV_MAIL", False),
         site_name=_str("AUTH_SITE_NAME", "TouchFish Auth"),
         trust_proxy=_bool("AUTH_TRUST_PROXY", False),
