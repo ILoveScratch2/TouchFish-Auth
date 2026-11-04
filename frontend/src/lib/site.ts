@@ -54,7 +54,6 @@ export function useSiteName(): string {
   return config?.site_name?.trim() || DEFAULT_SITE_NAME;
 }
 
-
 export function splitSiteName(name: string): [string, string] {
   const trimmed = name.trim();
   const cut = trimmed.indexOf(" ");

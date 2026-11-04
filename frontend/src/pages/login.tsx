@@ -93,6 +93,14 @@ export function LoginPage() {
     }
   }
 
+  function switchMode(next: Mode) {
+    if (next === mode) return;
+    setMode(next);
+    setError("");
+    setCaptchaToken(null);
+    setCaptchaReset((value) => value + 1);
+  }
+
   const otherMethods = methods.filter((method) =>
     mode === "platform" ? method.kind === "tfv5" : method.kind === "password",
   );
@@ -150,9 +158,28 @@ export function LoginPage() {
         <AuthItem>
           <Field>
             <FieldLabel htmlFor="identifier">
-              {mode === "platform"
-                ? "用户名或邮箱"
-                : "TouchFish 用户名或数字 ID"}
+              {/* 固定行高 + popLayout：切换时旧文案脱离文档流，
+                  新文案直接占位，输入框不会因为标签短暂消失而上移 */}
+              <span className="relative flex h-5 items-center">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={mode}
+                    initial={reduced ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                    transition={
+                      reduced
+                        ? { duration: 0 }
+                        : { duration: 0.15, ease: easings.easeOutExpo }
+                    }
+                    className="inline-block"
+                  >
+                    {mode === "platform"
+                      ? "用户名或邮箱"
+                      : "TouchFish 用户名或数字 ID"}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
             </FieldLabel>
             <Input
               id="identifier"
@@ -162,13 +189,30 @@ export function LoginPage() {
               aria-invalid={Boolean(error)}
               required
             />
-            {mode === "tfv5" ? (
-              <FieldDescription>
-                {site?.tfv5_login_auto_signup
-                  ? "将用这组凭据向 TouchFish 服务器验证；未绑定过的账号会自动开通并绑定"
-                  : "将用这组凭据向 TouchFish 服务器验证；该站点不接受自动开通，未绑定的账号需先用平台账号登录再绑定"}
-              </FieldDescription>
-            ) : null}
+            <AnimatePresence initial={false}>
+              {mode === "tfv5" ? (
+                <motion.div
+                  key="tfv5-hint"
+                  initial={reduced ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                  animate={
+                    reduced ? { opacity: 1 } : { opacity: 1, height: "auto" }
+                  }
+                  exit={reduced ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                  transition={
+                    reduced
+                      ? { duration: 0 }
+                      : { duration: 0.22, ease: easings.easeOutExpo }
+                  }
+                  className="overflow-hidden"
+                >
+                  <FieldDescription>
+                    {site?.tfv5_login_auto_signup
+                      ? "将用这组凭据向 TouchFish 服务器验证；未绑定过的账号会自动开通并绑定"
+                      : "将用这组凭据向 TouchFish 服务器验证；该站点不接受自动开通，未绑定的账号需先用平台账号登录再绑定"}
+                  </FieldDescription>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </Field>
         </AuthItem>
 
@@ -202,18 +246,33 @@ export function LoginPage() {
           </Field>
         </AuthItem>
 
-        {mode === "platform" ? (
-          <AuthItem>
-            <div className="flex justify-end">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              >
-                忘记密码？
-              </Link>
-            </div>
-          </AuthItem>
-        ) : null}
+        <AnimatePresence initial={false}>
+          {mode === "platform" ? (
+            <motion.div
+              key="forgot-link"
+              initial={reduced ? { opacity: 0 } : { opacity: 0, height: 0 }}
+              animate={
+                reduced ? { opacity: 1 } : { opacity: 1, height: "auto" }
+              }
+              exit={reduced ? { opacity: 0 } : { opacity: 0, height: 0 }}
+              transition={
+                reduced
+                  ? { duration: 0 }
+                  : { duration: 0.22, ease: easings.easeOutExpo }
+              }
+              className="overflow-hidden"
+            >
+              <div className="flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  忘记密码？
+                </Link>
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
         {needCaptcha && site?.captcha.provider ? (
           <AuthItem>
@@ -254,9 +313,9 @@ export function LoginPage() {
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={mode}
-              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0, x: -16 }}
               transition={
                 reduced
                   ? { duration: 0 }
@@ -269,10 +328,9 @@ export function LoginPage() {
                   key={method.id}
                   method={method}
                   disabled={pending}
-                  onClick={() => {
-                    setMode(method.kind === "tfv5" ? "tfv5" : "platform");
-                    setError("");
-                  }}
+                  onClick={() =>
+                    switchMode(method.kind === "tfv5" ? "tfv5" : "platform")
+                  }
                 />
               ))}
             </motion.div>

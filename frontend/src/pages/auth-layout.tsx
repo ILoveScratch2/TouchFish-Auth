@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import {
   Card,
@@ -74,7 +74,24 @@ export function AuthLayout({
               </motion.div>
               {description ? (
                 <motion.div variants={reduced ? undefined : authItemVariants}>
-                  <CardDescription>{description}</CardDescription>
+                  {/* Hello World! */}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.div
+                      key={
+                        typeof description === "string" ? description : "node"
+                      }
+                      initial={reduced ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={reduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                      transition={
+                        reduced
+                          ? { duration: 0 }
+                          : { duration: 0.18, ease: easings.easeOutExpo }
+                      }
+                    >
+                      <CardDescription>{description}</CardDescription>
+                    </motion.div>
+                  </AnimatePresence>
                 </motion.div>
               ) : null}
             </CardHeader>
