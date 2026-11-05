@@ -39,6 +39,21 @@ TEMPLATES: dict[str, dict[str, str]] = {
         "email_field": "email",
         "allowed_hosts": "github.com,api.github.com",
     },
+    "cpoauth": {
+        "provider_key": "cpoauth",
+        "display_name": "CP OAuth",
+        "authorize_url": "https://www.cpoauth.com/oauth/authorize",
+        "token_url": "https://www.cpoauth.com/api/oauth/token",
+        "userinfo_url": "https://www.cpoauth.com/api/oauth/userinfo",
+        "emails_url": "",
+        "scope": "openid profile email",
+        "token_auth_method": "post",
+        "uid_field": "sub",
+        "username_field": "username",
+        "email_field": "email",
+        "allowed_hosts": "www.cpoauth.com",
+        "require_verified_email": True,
+    },
     "gitlab": {
         "provider_key": "gitlab",
         "display_name": "GitLab",
@@ -167,6 +182,7 @@ def _to_cfg(row, settings: Settings) -> dict[str, Any]:
         "username_field": row["username_field"] or "login",
         "email_field": row["email_field"] or "email",
         "allowed_hosts": _hosts(row["allowed_hosts"]),
+        "require_verified_email": bool(row["require_verified_email"]),
         "enabled": bool(row["enabled"]),
     }
 
@@ -236,6 +252,7 @@ def admin_view(db: Db, settings: Settings) -> list[dict[str, Any]]:
             "username_field": cfg["username_field"],
             "email_field": cfg["email_field"],
             "allowed_hosts": ",".join(cfg["allowed_hosts"]),
+            "require_verified_email": cfg["require_verified_email"],
             "enabled": cfg["enabled"],
             "complete": _is_complete(cfg),
             "linked_accounts": int(counts.get(cfg["id"], 0)),
@@ -294,6 +311,9 @@ def _validate(payload: dict[str, Any], *, creating: bool,
         raise ProviderError("scope", "scope 过长（上限 200 字符）")
     cleaned["scope"] = scope
 
+    cleaned["require_verified_email"] = bool(
+        payload.get("require_verified_email", False))
+
     auth_method = str(payload.get("token_auth_method") or "post").strip().lower()
     if auth_method not in ("post", "basic"):
         raise ProviderError("token_auth_method", "令牌端点认证方式只能是 post 或 basic")
@@ -336,14 +356,15 @@ def create(db: Db, settings: Settings, payload: dict[str, Any]) -> str:
         "INSERT INTO oauth_providers (id, provider_key, display_name, client_id,"
         " client_secret_enc, authorize_url, token_url, userinfo_url, emails_url,"
         " scope, token_auth_method, uid_field, username_field, email_field,"
-        " allowed_hosts, enabled, created_at, updated_at)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        " allowed_hosts, require_verified_email, enabled, created_at, updated_at)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (secrets.token_hex(12), data["provider_key"], data["display_name"],
          data["client_id"], envelope.seal(settings.master_key, secret),
          data["authorize_url"], data["token_url"], data["userinfo_url"],
          data["emails_url"] or None, data["scope"], data["token_auth_method"],
          data["uid_field"], data["username_field"], data["email_field"],
-         data["allowed_hosts"], 1 if data["enabled"] else 0, now, now),
+         data["allowed_hosts"], 1 if data["require_verified_email"] else 0,
+         1 if data["enabled"] else 0, now, now),
     )
     return data["provider_key"]
 
@@ -369,6 +390,7 @@ def update(db: Db, settings: Settings, provider_id: str,
         "username_field": row["username_field"],
         "email_field": row["email_field"],
         "allowed_hosts": row["allowed_hosts"] or "",
+        "require_verified_email": bool(row["require_verified_email"]),
         "enabled": bool(row["enabled"]),
     }
     merged.update({key: value for key, value in payload.items()
@@ -400,13 +422,13 @@ def update(db: Db, settings: Settings, provider_id: str,
         " client_id = ?, client_secret_enc = ?, authorize_url = ?, token_url = ?,"
         " userinfo_url = ?, emails_url = ?, scope = ?, token_auth_method = ?,"
         " uid_field = ?, username_field = ?, email_field = ?, allowed_hosts = ?,"
-        " enabled = ?, updated_at = ? WHERE id = ?",
+        " require_verified_email = ?, enabled = ?, updated_at = ? WHERE id = ?",
         (new_key or row["provider_key"], data["display_name"], data["client_id"],
          blob, data["authorize_url"], data["token_url"], data["userinfo_url"],
          data["emails_url"] or None, data["scope"], data["token_auth_method"],
          data["uid_field"], data["username_field"], data["email_field"],
-         data["allowed_hosts"], 1 if data["enabled"] else 0, time.time(),
-         provider_id),
+         data["allowed_hosts"], 1 if data["require_verified_email"] else 0,
+         1 if data["enabled"] else 0, time.time(), provider_id),
     )
     return new_key or row["provider_key"]
 
@@ -480,6 +502,22 @@ def authorize_url(cfg: dict, redirect_uri: str, state: str) -> str:
         "response_type": "code",
     }
     return f"{cfg['authorize_url']}?{urlencode(params)}"
+
+
+def enforce_email_policy(cfg: dict, profile: dict) -> None:
+    """provider 要求「邮箱已验证」时，未验证的账号直接拒绝。
+
+    这不是多余的谨慎：`users.email_key` 同时用于按邮箱合并账号，
+    放行一个未验证的邮箱等于让别人可以预占他人的邮箱地址。
+    因此必须在**建号与合并之前**拦住，而不是只把邮箱丢掉。
+    """
+    if not cfg.get("require_verified_email"):
+        return
+    if not profile.get("email") or not profile.get("email_verified"):
+        raise OAuthError(
+            "email_unverified",
+            f"{cfg['name']} 账号的邮箱尚未验证，请先在该平台完成邮箱验证后再登录",
+        )
 
 
 def fetch_profile(cfg: dict, code: str, redirect_uri: str) -> dict:

@@ -8,6 +8,7 @@ import {
   RotateCw,
   Search,
   ShieldCheck,
+  Trash2,
   UserPlus,
 } from "lucide-react";
 
@@ -31,7 +32,7 @@ import {
   listItemVariants,
 } from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/primitives";
-import { ApiError, api } from "@/lib/api";
+import { ApiError, api, type AdminUserDetail } from "@/lib/api";
 import { formatTime } from "@/lib/format";
 import { useSiteName } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -68,6 +69,15 @@ export function AdminPage() {
   const [resetError, setResetError] = useState("");
   const [copied, setCopied] = useState(false);
 
+  // 用户详情弹窗
+  const [detailTarget, setDetailTarget] = useState<AdminUser | null>(null);
+  const [detail, setDetail] = useState<AdminUserDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // 删除用户
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   // 创建用户弹窗
   const [createOpen, setCreateOpen] = useState(false);
   const [createUsername, setCreateUsername] = useState("");
@@ -84,6 +94,37 @@ export function AdminPage() {
     const result = await api.adminOverview();
     setData(result);
   }, []);
+
+  async function openDetail(user: AdminUser) {
+    setDetailTarget(user);
+    setDetail(null);
+    setDetailLoading(true);
+    try {
+      setDetail(await api.adminUserDetail(user.id));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "加载用户详情失败");
+      setDetailTarget(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
+  async function doDelete() {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      await api.adminDeleteUser(deleteTarget.id);
+      setNotice(`已删除用户 ${deleteTarget.username}`);
+      setDeleteTarget(null);
+      setDetailTarget(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "删除失败，请稍后重试");
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => {
     load().catch(() => setData(null));
@@ -393,6 +434,13 @@ export function AdminPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => openDetail(user)}
+                          >
+                            详情
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             disabled={isSelf}
                             onClick={() => openReset(user)}
                           >
@@ -677,6 +725,209 @@ export function AdminPage() {
           </div>
         )}
       </Dialog>
+
+      <Dialog
+        open={detailTarget !== null}
+        onClose={() => setDetailTarget(null)}
+        title={detailTarget ? `${detailTarget.username} 的详情` : "用户详情"}
+        description="管理用户"
+        className="max-w-2xl"
+        footer={
+          <Button variant="outline" onClick={() => setDetailTarget(null)}>
+            关闭
+          </Button>
+        }
+      >
+        {detailLoading ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            正在加载…
+          </div>
+        ) : null}
+
+        {detail ? (
+          <div className="space-y-5 text-sm">
+            <section>
+              <h4 className="mb-2 text-xs font-medium text-muted-foreground">
+                基本信息
+              </h4>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div>
+                  <span className="text-muted-foreground">用户名 </span>
+                  {detail.user.username}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">角色 </span>
+                  {detail.user.role === "admin" ? "管理员" : "普通用户"}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">状态 </span>
+                  {detail.user.status === "active"
+                    ? "正常"
+                    : detail.user.status}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">邮箱 </span>
+                  {detail.user.email ?? "未绑定"}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">密码 </span>
+                  {detail.user.has_password ? "已设置" : "未设置"}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">注册于 </span>
+                  {formatTime(detail.user.created_at)}
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h4 className="mb-2 text-xs font-medium text-muted-foreground">
+                TouchFish 连接（{detail.connections.length}）
+              </h4>
+              {detail.connections.length === 0 ? (
+                <p className="text-muted-foreground">未连接任何服务器</p>
+              ) : (
+                <div className="space-y-2">
+                  {detail.connections.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-md border border-border px-3 py-2"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">
+                          {item.instance_name}
+                        </span>
+                        <StatusBadge tone="neutral">
+                          {item.bind_channel}
+                        </StatusBadge>
+                        {item.has_cached_session ? (
+                          <StatusBadge tone="success">可静默续期</StatusBadge>
+                        ) : null}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {item.tfv5_username} · uid {item.tfv5_uid} · 绑定于{" "}
+                        {formatTime(item.bound_at)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <h4 className="mb-2 text-xs font-medium text-muted-foreground">
+                第三方绑定（{detail.oauth_links.length}）
+              </h4>
+              {detail.oauth_links.length === 0 ? (
+                <p className="text-muted-foreground">未绑定第三方账号</p>
+              ) : (
+                <div className="space-y-2">
+                  {detail.oauth_links.map((item) => (
+                    <div
+                      key={`${item.provider}:${item.provider_uid}`}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <span className="font-medium">{item.provider}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {item.login ?? item.provider_uid}
+                        </span>
+                        <div className="text-xs text-muted-foreground">
+                          {item.email ?? "无邮箱"} · 绑定于{" "}
+                          {formatTime(item.linked_at)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <h4 className="mb-2 text-xs font-medium text-muted-foreground">
+                会话（{detail.sessions.length}）
+              </h4>
+              {detail.sessions.length === 0 ? (
+                <p className="text-muted-foreground">没有登录记录</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {detail.sessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-1.5 text-xs last:border-0"
+                    >
+                      <div className="min-w-0">
+                        <span className="font-mono">{session.id}</span>
+                        <span className="ml-2 text-muted-foreground">
+                          {session.user_agent?.slice(0, 48) || "未知设备"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        {session.active ? (
+                          <StatusBadge tone="success">在线</StatusBadge>
+                        ) : session.revoked ? (
+                          <StatusBadge tone="neutral">已吊销</StatusBadge>
+                        ) : (
+                          <StatusBadge tone="neutral">已过期</StatusBadge>
+                        )}
+                        <span>{formatTime(session.created_at)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-lg border border-error-border bg-error-soft/40 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="font-medium">删除该用户</div>
+                  <div className="text-xs text-muted-foreground">
+                    不可恢复
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setDeleteTarget(detailTarget)}
+                >
+                  <Trash2 className="size-3.5" />
+                  删除
+                </Button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+      </Dialog>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title={`删除 ${deleteTarget?.username ?? ""}`}
+        description="该账号的会话、TouchFish 连接、第三方绑定与已签发令牌都会被清除，操作不可撤销。"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={doDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  删除中…
+                </>
+              ) : (
+                "确认删除"
+              )}
+            </Button>
+          </>
+        }
+      />
     </PageWrapper>
   );
 }

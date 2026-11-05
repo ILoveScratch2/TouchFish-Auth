@@ -121,6 +121,38 @@ export type OidcRequestMeta = {
   state: string | null;
 };
 
+export type AdminUserDetail = {
+  user: {
+    id: string;
+    username: string;
+    display_name: string | null;
+    email: string | null;
+    has_password: boolean;
+    role: string;
+    status: string;
+    created_at: number;
+  };
+  sessions: {
+    id: string;
+    created_at: number;
+    last_seen_at: number | null;
+    expires_at: number;
+    revoked: boolean;
+    active: boolean;
+    ip: string | null;
+    user_agent: string | null;
+  }[];
+  oauth_links: {
+    provider: string;
+    provider_uid: string;
+    email: string | null;
+    login: string | null;
+    avatar_url: string | null;
+    linked_at: number;
+  }[];
+  connections: Connection[];
+};
+
 export type AuthMethod = {
   id: string;
   kind: "password" | "tfv5" | "oauth2";
@@ -173,6 +205,8 @@ export type OAuthProvider = {
   username_field: string;
   email_field: string;
   allowed_hosts: string;
+  /** 只接受邮箱已验证的该平台账号 */
+  require_verified_email: boolean;
   enabled: boolean;
   complete: boolean;
   linked_accounts: number;
@@ -195,6 +229,7 @@ export type OAuthProviderInput = {
   username_field?: string;
   email_field?: string;
   allowed_hosts?: string;
+  require_verified_email?: boolean;
   enabled?: boolean;
 };
 
@@ -535,6 +570,16 @@ export const api = {
       { method: "DELETE" },
     ),
   /** 管理员直接建号。不传 password 时后端生成一次性临时密码。 */
+  adminUserDetail: (userId: string) =>
+    request<AdminUserDetail>(
+      `/api/admin/users/${encodeURIComponent(userId)}/detail`,
+    ),
+  adminDeleteUser: (userId: string) =>
+    request<{ ok: boolean; removed: Record<string, number> }>(
+      `/api/admin/users/${encodeURIComponent(userId)}`,
+      { method: "DELETE" },
+    ),
+
   adminCreateUser: (body: {
     username: string;
     password?: string;

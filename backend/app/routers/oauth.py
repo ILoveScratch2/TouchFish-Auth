@@ -99,6 +99,7 @@ def oauth_callback(provider_id: str, request: Request,
 
     try:
         profile = oauth.fetch_profile(cfg, code, _callback_uri(request, provider_id))
+        oauth.enforce_email_policy(cfg, profile)
         if mode == "bind":
             user = current_user(request)
             if user is None or user["user_id"] != bind_uid:

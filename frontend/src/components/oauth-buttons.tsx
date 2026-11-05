@@ -56,6 +56,7 @@ const ERROR_TEXT: Record<string, string> = {
   register_disabled: "本站未开放注册，无法自动开通账号",
   create_failed: "自动开通账号失败，请联系管理员",
   already_linked: "该第三方账号已绑定到其他平台账户",
+  email_unverified: "该第三方账号的邮箱尚未验证，请先到该平台完成邮箱验证",
 };
 
 export function oauthErrorText(code: string): string {

@@ -122,6 +122,9 @@ CREATE TABLE IF NOT EXISTS oauth_providers (
     username_field TEXT NOT NULL DEFAULT 'login',
     email_field    TEXT NOT NULL DEFAULT 'email',
     allowed_hosts  TEXT NOT NULL DEFAULT '',  -- WebView list
+    -- 1 = 只接受「邮箱已验证」的该平台账号（未验证直接拒绝登录/绑定）。
+    -- cp-oauth 这类平台的邮箱是用户自填的，不验证就可能占住别人的地址。
+    require_verified_email INTEGER NOT NULL DEFAULT 0,
     enabled        INTEGER NOT NULL DEFAULT 1,
     created_at     REAL NOT NULL,
     updated_at     REAL NOT NULL
@@ -250,6 +253,12 @@ class Db:
             self._conn.execute(
                 "ALTER TABLE oauth_providers ADD COLUMN"
                 " token_auth_method TEXT NOT NULL DEFAULT 'post'"
+            )
+
+        if provider_columns and "require_verified_email" not in provider_columns:
+            self._conn.execute(
+                "ALTER TABLE oauth_providers ADD COLUMN"
+                " require_verified_email INTEGER NOT NULL DEFAULT 0"
             )
 
         client_columns = {

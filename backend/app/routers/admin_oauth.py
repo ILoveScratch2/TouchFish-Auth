@@ -28,6 +28,7 @@ class ProviderBody(BaseModel):
     username_field: str | None = Field(default=None, max_length=48)
     email_field: str | None = Field(default=None, max_length=48)
     allowed_hosts: str | None = Field(default=None, max_length=300)
+    require_verified_email: bool | None = None
     enabled: bool | None = None
 
 

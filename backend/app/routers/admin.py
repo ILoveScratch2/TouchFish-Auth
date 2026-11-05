@@ -185,6 +185,89 @@ def user_connections(user_id: str, request: Request):
     return JSONResponse({"connections": list_connections(runtime.db, user_id)})
 
 
+USER_OWNED_TABLES = (
+    "sessions", "connections", "tickets", "oauth_accounts",
+    "email_verifications", "password_resets",
+    "oauth_codes", "oauth_access_tokens", "oauth_refresh_tokens",
+)
+
+
+@router.get("/api/admin/users/{user_id}/detail")
+def user_detail(user_id: str, request: Request):
+    """管理端用户详情
+    """
+    admin, error = _require_admin(request)
+    if error:
+        return error
+    runtime = get_runtime()
+    db = runtime.db
+
+    row = db.query_one("SELECT * FROM users WHERE id = ?", (user_id,))
+    if row is None:
+        return api_error(404, "user_not_found", "用户不存在")
+
+    sessions = db.query(
+        "SELECT id, created_at, last_seen_at, expires_at, revoked_at, ip, user_agent"
+        " FROM sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
+        (user_id,),
+    )
+    now = time.time()
+    session_views = [{
+        "id": session["id"][:8],
+        "created_at": session["created_at"],
+        "last_seen_at": session["last_seen_at"],
+        "expires_at": session["expires_at"],
+        "revoked": session["revoked_at"] is not None,
+        "active": session["revoked_at"] is None and session["expires_at"] > now,
+        "ip": session["ip"],
+        "user_agent": session["user_agent"],
+    } for session in sessions]
+
+    links = db.query(
+        "SELECT provider, provider_uid, email, login, avatar_url, linked_at"
+        " FROM oauth_accounts WHERE user_id = ? ORDER BY linked_at DESC",
+        (user_id,),
+    )
+
+    return JSONResponse({
+        "user": users_service.public_view(row),
+        "sessions": session_views,
+        "oauth_links": [dict(link) for link in links],
+        "connections": list_connections(db, user_id),
+    })
+
+
+@router.delete("/api/admin/users/{user_id}")
+def delete_user(user_id: str, request: Request):
+    """删除用户
+    """
+    admin, error = _require_admin(request)
+    if error:
+        return error
+    runtime = get_runtime()
+    db = runtime.db
+
+    if user_id == admin["user_id"]:
+        return api_error(400, "cannot_delete_self", "不能删除当前登录的管理员账号")
+
+    row = db.query_one("SELECT * FROM users WHERE id = ?", (user_id,))
+    if row is None:
+        return api_error(404, "user_not_found", "用户不存在")
+    if row["role"] == "admin" and users_service.count_admins(db) <= 1:
+        return api_error(400, "last_admin", "无法删除唯一管理员")
+
+    removed = {}
+    for table in USER_OWNED_TABLES:
+        removed[table] = db.execute(
+            f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
+    runtime.db.audit("admin.user_deleted", admin["user_id"],
+                     client_ip(request), user_agent(request),
+                     detail=f"{row['username']}:{user_id[:8]}")
+    return JSONResponse({"ok": True, "removed": removed})
+
+
 # 站点配置 
 
 class SettingsBody(BaseModel):

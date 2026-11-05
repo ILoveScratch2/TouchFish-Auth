@@ -56,6 +56,7 @@ python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"
 | `provider_already_bound` | 该第三方账号已属于另一个平台账号 |
 | `last_login_method` | 没有密码且只有一条第三方绑定 |
 | `register_disabled` | `registration_mode=force_off` |
+| `email_unverified` | provider 要求邮箱已验证，但对方账号未验证或未返回邮箱 |
 | `mail_failed` | 未配 SMTP，调试可设置 `AUTH_DEV_MAIL=1`，查看本地邮件可通过 `/api/dev/outbox` |
 | `invalid_redirect_uri` | OIDC 应用的回调地址与注册值不一致（逐字符比对，不支持通配） |
 | `invalid_grant` | 授权码 / 刷新令牌无效、过期、已使用，或 PKCE 校验失败 |

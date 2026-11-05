@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import {
   Boxes,
   Code2,
+  Info,
   Fingerprint,
   Link2,
   MonitorSmartphone,
@@ -37,6 +38,7 @@ const integrationAdminNav: NavItem[] = [
 ];
 const integrationNav: NavItem[] = [
   { to: "/developer", label: "开发者", icon: <Code2 />, group: "集成" },
+  { to: "/about", label: "关于", icon: <Info />, group: "集成" },
 ];
 
 const adminNav: NavItem[] = [

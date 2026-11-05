@@ -46,6 +46,7 @@ type FormState = {
   username_field: string;
   email_field: string;
   allowed_hosts: string;
+  require_verified_email: boolean;
   enabled: boolean;
 };
 
@@ -64,6 +65,7 @@ const EMPTY: FormState = {
   username_field: "login",
   email_field: "email",
   allowed_hosts: "",
+  require_verified_email: false,
   enabled: true,
 };
 
@@ -83,6 +85,7 @@ function fromProvider(item: OAuthProvider): FormState {
     username_field: item.username_field,
     email_field: item.email_field,
     allowed_hosts: item.allowed_hosts,
+    require_verified_email: item.require_verified_email,
     enabled: item.enabled,
   };
 }
@@ -150,6 +153,7 @@ export function OAuthProvidersPage() {
       username_field: template.username_field ?? "login",
       email_field: template.email_field ?? "email",
       allowed_hosts: template.allowed_hosts ?? "",
+      require_verified_email: Boolean(template.require_verified_email),
     }));
   }
 
@@ -280,6 +284,9 @@ export function OAuthProvidersPage() {
                       {item.complete ? null : (
                         <StatusBadge tone="warning">配置不完整</StatusBadge>
                       )}
+                      {item.require_verified_email ? (
+                        <StatusBadge tone="info">要求邮箱已验证</StatusBadge>
+                      ) : null}
                       {item.linked_accounts > 0 ? (
                         <StatusBadge tone="info">
                           {item.linked_accounts} 个账号已绑定
@@ -541,6 +548,26 @@ export function OAuthProvidersPage() {
               </Field>
             </div>
           </details>
+
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={form.require_verified_email}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  require_verified_email: event.target.checked,
+                })
+              }
+            />
+            <span>
+              只接受邮箱已验证的账号
+              <span className="ml-2 text-xs text-muted-foreground">
+                未验证邮箱的账号会被拒绝
+              </span>
+            </span>
+          </label>
 
           <label className="flex items-center gap-2 text-sm">
             <input

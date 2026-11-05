@@ -4,6 +4,7 @@ import { MotionConfig } from "framer-motion";
 
 import { SessionProvider } from "@/lib/session";
 import { useSiteName } from "@/lib/site";
+import { AboutPage } from "@/pages/about";
 import { AccountPage } from "@/pages/account";
 import { AdminPage } from "@/pages/admin";
 import { AuditPage } from "@/pages/audit";
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/authorize" element={<AuthorizePage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route element={<ProtectedLayout />}>
             <Route path="/account" element={<AccountPage />} />
             <Route path="/account/connections" element={<ConnectionsPage />} />
