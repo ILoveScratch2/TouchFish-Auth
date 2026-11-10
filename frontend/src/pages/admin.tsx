@@ -883,9 +883,7 @@ export function AdminPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="font-medium">删除该用户</div>
-                  <div className="text-xs text-muted-foreground">
-                    不可恢复
-                  </div>
+                  <div className="text-xs text-muted-foreground">不可恢复</div>
                 </div>
                 <Button
                   variant="ghost"

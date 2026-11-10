@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import {
@@ -35,7 +36,7 @@ export function AuthLayout({
   const reduced = useReducedMotion();
   const siteName = useSiteName();
   return (
-    <div className="h-dvh overflow-y-auto overscroll-contain p-4">
+    <div className="h-dvh overflow-y-auto overscroll-contain px-4 pt-4 pb-[calc(env(safe-area-inset-bottom,0px)+6rem)] [@media(min-height:900px)]:pb-6">
       <div className="flex min-h-full flex-col gap-4">
         <motion.div
           className="flex shrink-0 justify-end gap-2"
@@ -111,6 +112,14 @@ export function AuthLayout({
               {footer}
             </motion.div>
           ) : null}
+          <div className="mt-4 pb-2 text-center text-xs text-muted-foreground">
+            <Link
+              to="/about"
+              className="underline-offset-4 hover:text-foreground hover:underline"
+            >
+              关于本站
+            </Link>
+          </div>
         </motion.div>
       </div>
     </div>

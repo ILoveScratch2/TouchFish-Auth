@@ -223,7 +223,7 @@ export function AppShell({ user, nav, children }: AppShellProps) {
           </Button>
         </div>
 
-        <main className="flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-y-auto px-6 py-6 lg:px-8">
+        <main className="flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-y-auto px-6 pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+4rem)] [@media(min-height:900px)]:pb-6 lg:px-8">
           <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-6">
             {children}
           </div>

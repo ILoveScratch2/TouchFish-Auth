@@ -21,11 +21,19 @@ SECRET_PREFIX = "sha256:"
 
 # 当前支持的全部 scope
 # 新增时要同步 well-known 的 scopes_supported
-SUPPORTED_SCOPES = ("openid", "profile", "email")
+SUPPORTED_SCOPES = ("openid", "profile", "email", "touchfish:bind")
+
+
+SCOPE_DESCRIPTIONS: dict[str, str] = {
+    "openid": "确认身份（唯一账户标识）",
+    "profile": "读取用户名与昵称",
+    "email": "读取邮箱地址与验证状态",
+    "touchfish:bind": "读取绑定 TouchFish 服务器账号信息（只读）",
+}
 
 
 class OidcError(Exception):
-    """端点层统一转成 OAuth2 的 error 对象（/token）或 302（/authorize）。"""
+    """端点层统一转 OAuth2 error 或 302"""
 
     def __init__(self, code: str, message: str, status: int = 400):
         super().__init__(message)
@@ -46,8 +54,6 @@ def _secret_hash(secret: str) -> str:
     return SECRET_PREFIX + hashlib.sha256(secret.encode("utf-8")).hexdigest()
 
 
-# ---------------------------------------------------------------- 客户端注册
-
 def redirect_list(raw: str | None) -> list[str]:
     return [line.strip() for line in (raw or "").splitlines() if line.strip()]
 
@@ -57,11 +63,8 @@ def scope_list(raw: str | None) -> list[str]:
 
 
 def normalize_scopes(requested: str | None, allowed: str | None) -> str:
-    """把请求的 scope 收敛到客户端允许的范围。
-
-    未请求 scope 时回落到客户端的默认集（必含 openid，否则拿不到 id_token）。
-    请求了未授权的 scope 直接拒绝，而不是静默丢弃——静默丢弃会让
-    调用方以为拿到了权限。
+    """
+    检查 scope
     """
     allowed_set = set(scope_list(allowed)) or set(SUPPORTED_SCOPES)
     requested_list = scope_list(requested)
@@ -79,7 +82,7 @@ def normalize_scopes(requested: str | None, allowed: str | None) -> str:
 
 
 def public_view(row: Any) -> dict[str, Any]:
-    """管理端列表用：绝不回显 secret，只说明是否设置过。"""
+    """管理端列表用"""
     return {
         "client_id": row["client_id"],
         "name": row["client_name"],
@@ -97,7 +100,7 @@ def find_client(db: Db, client_id: str) -> Any | None:
 
 
 def list_clients(db: Db, owner_id: str | None = None) -> list[dict[str, Any]]:
-    """owner_id 为 None 时返回全部（管理员视角）。"""
+    """owner_id 为 None 时返回全部（管理员"""
     if owner_id is None:
         rows = db.query("SELECT * FROM oauth_clients ORDER BY created_at DESC")
     else:
@@ -122,9 +125,9 @@ def _validate_redirect_uris(uris: list[str]) -> None:
 def create_client(db: Db, name: str, redirect_uris: list[str],
                   scopes: list[str], public: bool,
                   owner_id: str | None = None) -> tuple[dict[str, Any], str | None]:
-    """返回 (client_view, 明文 secret)。公开客户端 secret 为 None。
+    """返回 (client_view, 明文 secret)。公开客户端 secret 为 None
 
-    `owner_id` 为 None 表示管理员创建，不占用户自助配额。
+    `owner_id` 为 None 表示管理员创建
     """
     name = (name or "").strip()
     if not name:
@@ -207,8 +210,7 @@ def delete_client(db: Db, client_id: str) -> None:
     if row is None:
         raise OidcError("client_not_found", "客户端不存在", 404)
     now = time.time()
-    # 只停用不删即可保留审计线索，但客户端要求删除时应当真正失效：
-    # 连带吊销它名下所有令牌。
+    # 只停用不删即可保留审计线索
     db.execute("UPDATE oauth_access_tokens SET revoked_at = ?"
                " WHERE client_id = ? AND revoked_at IS NULL", (now, client_id))
     db.execute("UPDATE oauth_refresh_tokens SET revoked_at = ?"
@@ -417,9 +419,31 @@ def resolve_access(db: Db, token: str) -> dict[str, Any]:
     return row
 
 
+#: touchfish:bind
+BINDING_CLAIM_FIELDS = (
+    "instance_id", "instance_name", "instance_url",
+    "tfv5_uid", "tfv5_username", "bound_at",
+)
+
+
+def _binding_claims(db: Db, user_id: str) -> list[dict[str, Any]]:
+    rows = db.query(
+        "SELECT c.instance_id, i.display_name AS instance_name,"
+        " i.base_url AS instance_url, c.tfv5_uid, c.tfv5_username, c.bound_at"
+        " FROM connections c JOIN tfv5_instances i ON i.id = c.instance_id"
+        " WHERE c.user_id = ? ORDER BY c.bound_at",
+        (user_id,),
+    )
+    return [{field: row[field] for field in BINDING_CLAIM_FIELDS} for row in rows]
+
+
 def userinfo(db: Db, token: str) -> dict[str, Any]:
     row = resolve_access(db, token)
     claims = _claims_for_user(db, row["user_id"], row["scope"])
+    scopes = scope_list(row["scope"])
+    if "touchfish:bind" in scopes:
+        # 只读
+        claims["touchfish_bindings"] = _binding_claims(db, row["user_id"])
     return claims
 
 

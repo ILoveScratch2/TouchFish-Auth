@@ -11,9 +11,11 @@ import { useSession } from "@/lib/session";
 import { useSiteName } from "@/lib/site";
 
 const SCOPE_TEXT: Record<string, string> = {
-  openid: "确认你的身份 ID",
-  profile: "读取你的用户名与昵称",
-  email: "读取你的邮箱地址与验证状态",
+  openid: "确认身份 ID",
+  profile: "读取用户名与昵称",
+  email: "读取邮箱地址与验证状态",
+  "touchfish:bind":
+    "读取绑定的 TouchFish 服务器账号信息（只读，不能用于登录）",
 };
 
 export function OidcConsent() {

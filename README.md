@@ -130,6 +130,18 @@ cd backend
 - 回调地址不支持通配，请配置完整准确 URL
 - TFV5 只接受 `token_use` 为空或为 `tfv5` 的令牌，第三方 OAuth 平台无法通过该 OAuth 登录 TouchFish V5。需要第三方登录 TouchFish V5 时需使用授权客户端流程（详情参考源代码）
 
+
+### 支持 scope
+
+| scope | 内容 | 能否用于登录 |
+|---|---|---|
+| `openid` | `sub`，同时签发 id_token | 否 |
+| `profile` | 用户名、昵称 | 否 |
+| `email` | 邮箱与 `email_verified` | 否 |
+| `touchfish:bind` | 已绑定的 TouchFish 账号：`instance_id` / `instance_name` / `instance_url` / `tfv5_uid` / `tfv5_username` / `bound_at` | 否 |
+
+`touchfish:bind` 是只读信息，无法用于登录。
+
 ## 限制
 
 - 客户端 Web 端暂不支持外部登录闭环（浏览器没有 InAppWebView 的 JS 桥）注：OAuth 仍然可用，但无法完成自动传回

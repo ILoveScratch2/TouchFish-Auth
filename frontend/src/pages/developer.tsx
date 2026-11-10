@@ -30,6 +30,11 @@ const ALL_SCOPES = [
   { id: "openid", label: "openid", hint: "身份标识（必选）" },
   { id: "profile", label: "profile", hint: "用户名与昵称" },
   { id: "email", label: "email", hint: "邮箱地址与验证状态" },
+  {
+    id: "touchfish:bind",
+    label: "touchfish:bind",
+    hint: "读取绑定的 TouchFish 账号信息（只读，不能用于登录）",
+  },
 ];
 
 type Policy = {

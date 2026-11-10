@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 
 from ..runtime import get as get_runtime
 from ..services import instances as instances_repo
-from ..services import oauth, site
+from ..services import oauth, oidc, site
 
 router = APIRouter()
 
@@ -37,11 +37,12 @@ def openid_configuration() -> JSONResponse:
         ],
         # 公开客户端强制 PKCE
         "code_challenge_methods_supported": ["S256"],
-        "scopes_supported": ["openid", "profile", "email"],
+        "scopes_supported": list(oidc.SUPPORTED_SCOPES),
         "claims_supported": [
             "iss", "sub", "aud", "exp", "iat", "nbf", "jti",
             "preferred_username", "name", "email", "email_verified",
             "nonce", "auth_time", "token_use", "tfv5_uid",
+            "touchfish_bindings",
         ],
         "authorization_endpoint": f"{base}/authorize",
         "token_endpoint": f"{base}/token",
