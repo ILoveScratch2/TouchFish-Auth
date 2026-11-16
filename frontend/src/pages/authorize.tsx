@@ -33,6 +33,9 @@ function Tfv5Authorize() {
   const clientId = readQuery("client_id") ?? "touchfish";
   const state = readQuery("state");
   const target = readQuery("target");
+  // 系统浏览器通道
+  const loopbackRedirect = readQuery("redirect");
+  const codeChallenge = readQuery("code_challenge");
   const needCaptcha = Boolean(site?.captcha.on_login);
 
   const [phase, setPhase] = useState<Phase>("checking");
@@ -135,8 +138,16 @@ function Tfv5Authorize() {
         client_id: clientId,
         state: state ?? undefined,
         target: instance?.base_url,
+        redirect: loopbackRedirect ?? undefined,
+        code_challenge: codeChallenge ?? undefined,
       });
       setTicket(result.ticket);
+      if (result.redirect_to) {
+        // 系统浏览器
+        setPhase("done");
+        window.location.replace(result.redirect_to);
+        return;
+      }
       const delivered = deliverTicket({
         type: "touchfish-auth:done",
         state: state,
@@ -156,9 +167,19 @@ function Tfv5Authorize() {
   if (phase === "done") {
     return (
       <AuthLayout
-        title="已返回应用"
+        title={
+          loopbackRedirect
+            ? "正在返回应用"
+            : bridged_done
+              ? "已返回应用"
+              : "票据已生成"
+        }
         description={
-          bridged_done ? "可以关闭此页面" : "请复制下面的 ticket 返回应用"
+          bridged_done
+            ? "可以关闭此页面"
+            : loopbackRedirect
+              ? "若没有自动跳回应用，请复制下面的票据，在应用的「手动输入票据」里粘贴继续登录"
+              : "请复制下面的票据，在应用的「手动输入票据」里粘贴继续登录"
         }
       >
         <div className="space-y-4">

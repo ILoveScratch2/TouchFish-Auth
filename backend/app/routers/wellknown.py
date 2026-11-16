@@ -83,6 +83,8 @@ def auth_config() -> JSONResponse:
             "site_name": site_values["site_name"],
             "authorization_endpoint": f"{base}/authorize",
             "ticket_endpoint": f"{base}/api/auth/ticket",
+            # bridge：授权页在 WebView/iframe 内回传；loopback：本机回调地址跳转
+            "response_modes": ["bridge", "loopback"],
             "methods": methods,
         },
         headers={"Cache-Control": "public, max-age=60"},

@@ -363,14 +363,18 @@ export const api = {
     client_id: string;
     state?: string;
     target?: string;
+    redirect?: string;
+    code_challenge?: string;
   }) =>
-    request<{ ticket: string; expires_in: number; state?: string }>(
-      "/api/authorize/complete",
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-      },
-    ),
+    request<{
+      ticket: string;
+      expires_in: number;
+      state?: string;
+      redirect_to?: string;
+    }>("/api/authorize/complete", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   developer: () =>
     request<{

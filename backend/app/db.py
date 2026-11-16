@@ -76,7 +76,9 @@ CREATE TABLE IF NOT EXISTS tickets (
     client_id   TEXT NOT NULL,
     created_at  REAL NOT NULL,
     expires_at  REAL NOT NULL,
-    consumed_at REAL
+    consumed_at REAL,
+    -- loopback 投递时绑定 PKCE
+    code_challenge TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_tickets_expires ON tickets(expires_at);
 
@@ -266,6 +268,12 @@ class Db:
         }
         if client_columns and "owner_id" not in client_columns:
             self._conn.execute("ALTER TABLE oauth_clients ADD COLUMN owner_id TEXT")
+
+        ticket_columns = {
+            row[1] for row in self._conn.execute("PRAGMA table_info(tickets)")
+        }
+        if ticket_columns and "code_challenge" not in ticket_columns:
+            self._conn.execute("ALTER TABLE tickets ADD COLUMN code_challenge TEXT")
 
     def query(self, sql: str, params: Sequence[Any] = ()) -> list[sqlite3.Row]:
         with self._lock:
