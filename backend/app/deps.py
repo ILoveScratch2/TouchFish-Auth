@@ -48,9 +48,13 @@ def origin_allowed(request: Request) -> bool:
         return False
 
     try:
-        extra = {item.lower() for item in get_runtime().settings.allowed_origins}
+        settings = get_runtime().settings
+        extra = {item.lower() for item in settings.allowed_origins}
+        extra |= {item.lower() for item in settings.cors_origins}
     except RuntimeError:
         extra = set()
+    if "*" in extra:
+        return True
     if origin_netloc in extra or origin.lower() in extra:
         return True
 

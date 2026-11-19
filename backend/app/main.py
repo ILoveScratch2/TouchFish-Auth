@@ -10,6 +10,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.middleware.cors import CORSMiddleware
 
 from .db import Db
 from .deps import api_error, csrf_ok
@@ -103,6 +104,39 @@ async def guard(request: Request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("Referrer-Policy", "same-origin")
     return response
+
+
+class _LazyCORS:
+    def __init__(self, app: FastAPI) -> None:
+        self.app = app
+        self._inner: CORSMiddleware | None = None
+
+    def _build(self) -> CORSMiddleware:
+        try:
+            origins = list(get_runtime().settings.cors_origins)
+        except RuntimeError:  # 运行时未就绪
+            log.warning("CORS 配置不可用，按拒绝跨源处理")
+            origins = []
+        return CORSMiddleware(
+            self.app,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+            expose_headers=["Retry-After"],
+            max_age=600,
+        )
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        if self._inner is None:
+            self._inner = self._build()
+        await self._inner(scope, receive, send)
+
+
+app.add_middleware(_LazyCORS)
 
 
 @app.get("/api/health")

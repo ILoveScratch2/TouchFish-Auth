@@ -77,6 +77,7 @@ class Settings:
     ticket_ttl: int
     cookie_secure: bool
     allowed_origins: list[str]
+    cors_origins: list[str]
     frontend_dist: Path
     dev_mail: bool
     site_name: str
@@ -135,6 +136,7 @@ def load_settings(env_file: Path | None = None) -> Settings:
         ticket_ttl=_int("AUTH_TICKET_TTL", 60),
         cookie_secure=_bool("AUTH_COOKIE_SECURE", True),
         allowed_origins=_split("AUTH_ALLOWED_ORIGINS"),
+        cors_origins=_split("AUTH_CORS_ORIGINS") or ["*"],
         frontend_dist=(_RESOURCE_DIR / "frontend" / "dist").resolve(),
         dev_mail=_bool("AUTH_DEV_MAIL", False),
         site_name=_str("AUTH_SITE_NAME", "TouchFish Auth"),
